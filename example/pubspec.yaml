@@ -20,7 +20,8 @@ dependencies:
   connectivity: ^1.0.0
   dart_countries_states: ^0.0.8
   dmrtd:
-    path: ../../dmrtd
+    git:
+      url: https://github.com/ZeroPass/dmrtd.git
   flare_flutter: ^2.0.3
   flutter:
     sdk: flutter
