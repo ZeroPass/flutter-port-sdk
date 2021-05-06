@@ -1,6 +1,7 @@
 //  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
 import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
+import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
 import 'package:passid/src/proto/uid.dart';
 
@@ -70,8 +71,10 @@ class PassIdClient {
   /// Throws [PassIdError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
   Future<void> login(Future<AuthnData> Function(ProtoChallenge challenge) callback, {bool sendEfDG1 = false}) async {
+    _log.verbose('::login');
     await _retriableCall(_getNewChallenge);
 
+     _log.verbose('Invoking callback with recieved challenge');
     final data = await callback(_challenge);
     _throwIfMissingRequiredAuthnData(data);
 
@@ -95,6 +98,7 @@ class PassIdClient {
   /// Calls pasID ping API with [number] and returns [pong] number.
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
   Future<int> ping(int number) async {
+    _log.verbose('Pinging server with: $number');
     return _api.ping(number);
   }
 
@@ -106,8 +110,10 @@ class PassIdClient {
   /// Throws [PassIdError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
   Future<void> register(Future<AuthnData> Function(ProtoChallenge challenge) callback) async {
+    _log.verbose('::register');
     await _retriableCall(_getNewChallenge);
 
+    _log.verbose('Invoking callback with recieved challenge');
     final data = await callback(_challenge);
     _throwIfMissingRequiredAuthnData(data);
     if(data.sod == null) {
@@ -129,6 +135,7 @@ class PassIdClient {
   /// Throws [PassIdError] if session is not set or
   /// invalid session parameters.
   Future<String> requestGreeting() {
+    _log.verbose('::requestGreeting');
     if(_session == null) {
       throw PassIdError(-32602, 'Session not established');
     }
@@ -139,6 +146,7 @@ class PassIdClient {
 
   Future<void> _getNewChallenge() async {
     _challenge = await _api.getChallenge();
+    _log.debug('Recieved new challenge: ${_challenge.toString()}');
   }
 
   /// Function recursively calls [func] in case of a handled exception until result is returned.
