@@ -301,7 +301,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                 keyboardAppearance: Brightness.dark,
                 decoration: const InputDecoration(labelText: 'Passport number'),
                 inputFormatters: <TextInputFormatter>[
-                  WhitelistingTextInputFormatter(RegExp(r'[A-Z0-9]+')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]+')),
                   LengthLimitingTextInputFormatter(14)
                 ],
                 textInputAction: TextInputAction.done,

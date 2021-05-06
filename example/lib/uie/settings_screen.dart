@@ -134,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             keyboardAppearance: Brightness.dark,
             decoration: const InputDecoration(labelText: 'Timeout (sec)'),
             inputFormatters: <TextInputFormatter>[
-              WhitelistingTextInputFormatter(RegExp(r'[1-9][0-9]*')),
+              FilteringTextInputFormatter.allow(RegExp(r'[1-9][0-9]*')),
               LengthLimitingTextInputFormatter(2)
             ],
             textInputAction: TextInputAction.done,
