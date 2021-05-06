@@ -129,7 +129,7 @@ class _PassIdeWidgetState extends State<PassIdeWidget>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        resizeToAvoidBottomPadding: false,
+        resizeToAvoidBottomInset: false,
         body: Container(
             height: MediaQuery.of(context).size.height,
             child: HomePage(context, gotoSignup, gotoLogin)));
