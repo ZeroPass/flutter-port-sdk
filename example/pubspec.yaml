@@ -16,6 +16,8 @@ version: 1.0.0+1
 environment:
   sdk: ">=2.2.2 <3.0.0"
 
+publish_to: none # git packages
+
 dependencies:
   connectivity: ^1.0.0
   dart_countries_states: ^0.0.8
@@ -29,7 +31,7 @@ dependencies:
     sdk: flutter
   flutter_widgets: ^0.1.12
   flutter_launcher_icons: ^0.7.5
-  intl: ^0.16.0
+  intl: ^0.17.0
   open_settings:
     git:
         url: https://github.com/smlu/open_settings/
