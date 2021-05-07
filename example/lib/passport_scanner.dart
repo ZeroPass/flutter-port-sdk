@@ -128,7 +128,7 @@ class PassportScanner {
               'Failed to initiate session with passport.\nPlease, check input data!';
         }
         if (e.code != null) {
-          errorMsg += "\n(error code: ${e.code})";
+          errorMsg += '\n(error code: ${e.code})';
         }
         _log.error('Failed to scan passport: ${e.message}');
       } else {
@@ -146,10 +146,7 @@ class PassportScanner {
         errorMsg = '';
         throw PassportScannerError('Canceled by user');
       }
-
-      if (errorMsg.isNotEmpty) {
-        throw PassportScannerError(errorMsg);
-      }
+      throw PassportScannerError(errorMsg);
     } finally {
       if (errorMsg != null) {
         await _disconnect(errorMessage: errorMsg);
@@ -191,11 +188,11 @@ class PassportScanner {
     await showAlert(context, Text('Unsupported Passport'),
         Text('This passport is not supported!'), [
       FlatButton(
+          onPressed: () => Navigator.pop(context),
           child: const Text(
             'CLOSE',
             style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          onPressed: () => Navigator.pop(context))
+          ))
     ]);
   }
 

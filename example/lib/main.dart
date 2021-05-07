@@ -110,17 +110,17 @@ class _PassIdeWidgetState extends State<PassIdeWidget>
                 "This device doesn't support NFC.\nNFC is required to use this app."),
             [
               FlatButton(
-                  child: Text('EXIT',
-                      style: TextStyle(
-                          color: Theme.of(context).errorColor,
-                          fontWeight: FontWeight.bold)),
                   onPressed: () {
                     if (Platform.isIOS) {
                       exit(0);
                     } else {
                       SystemNavigator.pop(animated: true);
                     }
-                  })
+                  },
+                  child: Text('EXIT',
+                      style: TextStyle(
+                          color: Theme.of(context).errorColor,
+                          fontWeight: FontWeight.bold)))
             ]);
       }
     });

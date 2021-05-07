@@ -28,7 +28,7 @@ class JRPClient {
   String origin;
   Uri url;
 
-  final _log = Logger("jrpc");
+  final _log = Logger('jrpc');
 
   /// Constructs new [JRPCClient] with server [url] and
   /// optional parameters:
@@ -63,7 +63,7 @@ class JRPClient {
   }
 
   Future<HttpClientResponse> _sendRequest(final JRpcRequest jrpcRequest) async {
-    _log.debug('Sending rpc call to: ${url}');
+    _log.debug('Sending rpc call to: $url');
     _log.debug('  rpc_version=${jrpcRequest.version}');
     _log.debug('  id=${jrpcRequest.id}');
     _log.debug("  method='${jrpcRequest.method}'");
@@ -114,10 +114,10 @@ class JRPClient {
         return jrpcResp;
       }
       on Exception catch(e) {
-        throw JRPClientError('Failed to parse RPC response: ${e}');
+        throw JRPClientError('Failed to parse RPC response: $e');
       }
     }
-    throw JRPClientError('Request error: statusCode=${resp.statusCode} headers="${resp.headers}" content="${content}"');
+    throw JRPClientError('Request error: statusCode=${resp.statusCode} headers="${resp.headers}" content="$content"');
   }
 
   dynamic _handleJRpcResponse(String reqId, JRpcResponse response) {

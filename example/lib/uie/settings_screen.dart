@@ -21,6 +21,7 @@ bool _isValidUrl(String url) {
 
 class SettingsScreen extends StatefulWidget {
   SettingsScreen({Key key}) : super(key: key);
+  @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
 

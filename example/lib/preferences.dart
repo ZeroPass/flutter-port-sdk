@@ -6,12 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Preferences {
 
-  static final Uri defaltServerUrl     = Uri.parse("https://127.0.0.1:443");
-  static const Duration defaultTimeout = const Duration(seconds:5); // sec
+  static final Uri defaltServerUrl     = Uri.parse('https://127.0.0.1:443');
+  static const Duration defaultTimeout = Duration(seconds:5); // sec
 
-  static const String _srvUrl  = "serverUrl";
-  static const String _timeout = "timeout";
-  static const String _dbakeys = "dbaKeys";
+  static const String _srvUrl  = 'serverUrl';
+  static const String _timeout = 'timeout';
+  static const String _dbakeys = 'dbaKeys';
 
   static SharedPreferences _prefs;
 

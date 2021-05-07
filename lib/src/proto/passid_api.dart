@@ -128,7 +128,7 @@ class PassIdApi {
     final resp = await _transceive(method: 'sayHello', params: params);
     _throwIfError(resp);
 
-    final srvMsg = resp["msg"] as String;
+    final srvMsg = resp['msg'] as String;
     _log.debug('passID.register <= srvMsg="$srvMsg"');
     return srvMsg;
   }

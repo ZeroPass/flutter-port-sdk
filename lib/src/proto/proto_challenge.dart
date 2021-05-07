@@ -59,7 +59,7 @@ class ProtoChallenge {
     }
 
     final chunks = <Uint8List>[];
-    for(int i = 0; i < data.length; i += chunkSize) {
+    for(var i = 0; i < data.length; i += chunkSize) {
       final c = data.sublist(i,  i + chunkSize);
       chunks.add(Uint8List.fromList(c));
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pedantic/pedantic.dart';
 
 import 'load_indicator.dart';
 import 'settings_screen.dart';
@@ -69,7 +70,7 @@ Future<T> showAlert<T>(BuildContext context, Widget title, Widget content,
 Future<void> showBusyDialog(BuildContext context, GlobalKey key,
     {String msg = 'Please Wait ....',
     Duration syncWait = const Duration(milliseconds: 200)}) async {
-  showDialog<void>(
+  unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -90,7 +91,7 @@ Future<void> showBusyDialog(BuildContext context, GlobalKey key,
                     ]),
                   )
                 ]));
-      });
+      }));
   // Sync
   await Future.delayed(syncWait);
 }
@@ -107,7 +108,7 @@ Future<void> hideBusyDialog(GlobalKey dialogKey,
 Future<DateTime> pickDate(BuildContext context, DateTime firstDate,
     DateTime initDate, DateTime lastDate) async {
   final locale = Localizations.maybeLocaleOf(context);
-  final DateTime picked = await showDatePicker(
+  final picked = await showDatePicker(
       context: context,
       firstDate: firstDate,
       initialDate: initDate,
@@ -117,7 +118,7 @@ Future<DateTime> pickDate(BuildContext context, DateTime firstDate,
 }
 
 IconButton settingsButton(BuildContext context,
-    {final iconSize = 24.0, Future<void> onWillPop()}) {
+    {final iconSize = 24.0, Future<void> Function() onWillPop}) {
   return IconButton(
     icon: Icon(Icons.settings, color: Theme.of(context).primaryColor),
     iconSize: iconSize,

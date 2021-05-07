@@ -7,6 +7,7 @@ import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -194,7 +195,7 @@ class _AuthnScreenState extends State<AuthnScreen>
       await _updateNfcStatus();
       if(!_authnData.isCompleted && !_isNfcAvailable) {
         _log.debug('NFC is disabled showing alert');
-        _showNfcAlert();
+        unawaited(_showNfcAlert());
       }
       else {
         _hideNfcAlert();
@@ -589,8 +590,8 @@ class _AuthnScreenState extends State<AuthnScreen>
   Future<void> _updateNfcStatus() async {
     bool isNfcAvailable;
     try {
-      NfcStatus status = await NfcProvider.nfcStatus;
-      isNfcAvailable = status == NfcStatus.enabled;
+      var status = await NfcProvider.nfcStatus;
+      isNfcAvailable = (status == NfcStatus.enabled);
     } on PlatformException {
       isNfcAvailable = false;
     }
