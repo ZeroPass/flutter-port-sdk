@@ -15,10 +15,8 @@ class Preferences {
 
   static SharedPreferences _prefs;
 
-  static void init() async {
-    if(_prefs == null) {
-      _prefs = await SharedPreferences.getInstance();
-    }
+  static Future<void> init() async {
+    _prefs ??= await SharedPreferences.getInstance();
   }
 
   static DBAKeys getDBAKeys() {
