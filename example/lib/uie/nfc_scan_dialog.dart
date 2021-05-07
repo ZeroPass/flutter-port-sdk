@@ -174,6 +174,7 @@ class NfcScanDialog {
       _sheetSetter = null;
       Navigator.pop(context);
     }
+    return Future.value(null);
   }
 
   Future<void> _onCancel() async {
