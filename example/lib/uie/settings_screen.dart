@@ -47,8 +47,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () async {
-          _saveSrvUrlInput();
-          _saveTimeoutInput();
+          await _saveSrvUrlInput();
+          await _saveTimeoutInput();
           return true;
         },
         child: Scaffold(
@@ -188,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _showSnackBar(context, 'Failed to connect to server!');
                 }
 
-                hideBusyDialog(_keyBusyIndicator,
+                await hideBusyDialog(_keyBusyIndicator,
                     syncWait: Duration(microseconds: 0));
               },
             ),
