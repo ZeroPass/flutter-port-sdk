@@ -1,4 +1,4 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:async';
 import 'dart:io';
 
@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:open_settings/open_settings.dart';
-import 'package:passid/passid.dart';
+import 'package:port/port.dart';
 
 import '../passport_scanner.dart';
 import '../preferences.dart';
@@ -38,7 +38,7 @@ class _AuthnScreenState extends State<AuthnScreen>
 
   final AuthnAction _action;
   final _log = Logger('action.screen');
-  PassIdClient _client;
+  PortClient _client;
 
   var _isNfcAvailable = false;
   var _isScanningMrtd = false;
@@ -48,7 +48,7 @@ class _AuthnScreenState extends State<AuthnScreen>
   final GlobalKey<State> _keyBusyIndicator =
       GlobalKey<State>(debugLabel: 'key_action_screen_busy_indicator');
 
-  // Data needed fo PassId protocol
+  // Data needed for Port protocol
   ProtoChallenge _challenge;
   final _authnData = Completer<AuthnData>();
 
@@ -79,12 +79,12 @@ class _AuthnScreenState extends State<AuthnScreen>
         }
         _showBusyIndicator().then((value) async {
           try {
-            // Init PassIdClient
-            _client = PassIdClient(Preferences.getServerUrl(), httpClient: httpClient);
+            // Init PortClient
+            _client = PortClient(Preferences.getServerUrl(), httpClient: httpClient);
             _client.onConnectionError  = _handleConnectionError;
             _client.onDG1FileRequested = _handleDG1Request;
 
-            // Execute authn action on passId client
+            // Execute authn action on Port client
             switch(_action) {
               case AuthnAction.register:
                 await _client.register((challenge) async {
@@ -119,10 +119,10 @@ class _AuthnScreenState extends State<AuthnScreen>
             String alertTitle;
             String alertMsg;
             if (e is SocketException) {} // should be already handled through _handleConnectionError callback
-            else if(e is PassIdError) {
+            else if(e is PortError) {
               if(!e.isDG1Required()) { // DG1 required error should be handled through _handleDG1Request callback
-                _log.error('An unhandled passId exception, closing this screen.\n error=$e');
-                alertTitle = 'PassID Error';
+                _log.error('An unhandled Port exception, closing this screen.\n error=$e');
+                alertTitle = 'Port Error';
                 switch(e.code){
                   case 401: alertMsg = 'Authorization failed!'; break;
                   //case 404: // TODO: parse message and translate it to system language

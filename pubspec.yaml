@@ -1,5 +1,5 @@
-name: passid
-description: PassID protocol.
+name: "port"
+description: "Client SDK to interact with Port server."
 version: 1.0.0
 
 environment:

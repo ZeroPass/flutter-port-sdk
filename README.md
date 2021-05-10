@@ -1,12 +1,12 @@
-## PassID Library
-Dart implementation of PassID PoC client.
+## Port Library
+Flutter implementation of Port client SDK.
 
 ## Usage
- 1) Include `passid` library in your project's `pubspec.yaml` file:  
+ 1) Include `port` library in your project's `pubspec.yaml` file:  
 ```
 dependencies:
-  passid:
-    path: '<path_to_passid_folder>'
+  port:
+    path: '<path_to_port_folder>'
 ```
  2) Run 
  ```
@@ -17,7 +17,7 @@ dependencies:
 *Note: See also [example](example) app*
 
 ```dart
-import 'package:passid/passid.dart';
+import 'package:port/port.dart';
 
 AuthnData getAuthnData(final ProtoChallenge challenge) async {
   return // data from passport
@@ -25,7 +25,7 @@ AuthnData getAuthnData(final ProtoChallenge challenge) async {
 
 main() {
   try {
-    var client = new PassIdClient(serverUrl, httpClient: httpClient);
+    var client = new PortClient(serverUrl, httpClient: httpClient);
     client.onConnectionError  = handleConnectionError;
     client.onDG1FileRequested = handleDG1Request;
 

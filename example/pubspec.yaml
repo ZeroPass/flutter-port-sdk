@@ -1,5 +1,5 @@
-name: passide
-description: A pass ID test client app.
+name: 'egport'
+description: 'Port example client app.'
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -36,7 +36,7 @@ dependencies:
     git:
         url: https://github.com/smlu/open_settings/
         ref: patch-1
-  passid:
+  port:
     path: ../
 
   # The following adds the Cupertino Icons font to your application.
@@ -52,7 +52,7 @@ dev_dependencies:
 flutter_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/passid_icon.jpg"
+  image_path: "assets/images/port_icon.jpg"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -69,9 +69,9 @@ flutter:
   assets:
     - assets/anim/success_check.flr
     - assets/anim/nfc.flr
-    - assets/certs/passid_srv.cer
+    - assets/certs/port_server.cer
     - assets/images/mountains.jpg
-    - assets/images/passid.png
+    - assets/images/port.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

@@ -1,21 +1,21 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
-import 'package:passid/src/proto/uid.dart';
+import 'package:port/src/proto/uid.dart';
 
 import 'authn_data.dart';
-import 'proto/passid_api.dart';
-import 'proto/passid_error.dart';
+import 'proto/port_api.dart';
+import 'proto/port_error.dart';
 import 'proto/proto_challenge.dart';
 import 'proto/session.dart';
 
 
-class PassIdClient {
+class PortClient {
 
-  final _log = Logger('passid.client');
-  final PassIdApi _api;
+  final _log = Logger('port.client');
+  final PortApi _api;
   ProtoChallenge _challenge;
   Session _session;
   Future<bool> Function(SocketException e) _onConnectionError;
@@ -33,10 +33,10 @@ class PassIdClient {
   Uri get url => _api.url;
   set url(Uri url) => _api.url = url;
 
-  /// Constructs new [PassIdClient] using server [url] address and
+  /// Constructs new [PortClient] using server [url] address and
   /// optionally [httpClient].
-  PassIdClient(Uri url, {HttpClient httpClient}) :
-    _api = PassIdApi(url, httpClient: httpClient ?? HttpClient());
+  PortClient(Uri url, {HttpClient httpClient}) :
+    _api = PortApi(url, httpClient: httpClient ?? HttpClient());
 
 
   /// Callback invoked when sending request fails due to connection errors.
@@ -59,16 +59,16 @@ class PassIdClient {
     }
   }
 
-  /// Establishes session by calling passID login API using [AuthnData] returned via [callback].
+  /// Establishes session by calling Port login API using [AuthnData] returned via [callback].
   /// [AuthnData] should have assigned fields: [csig], [sod] and [dg1] in case server request it.
   /// If argument [sendEfDG1] is true then file EfDG1 will be sent to server in any case without
   /// server requesting it first.
   ///
   /// Note: If login fails due to server requested EF.DG1 file this request
-  ///       is handled via callback [onDG1FileRequested]. If not [PassIdError] is thrown.
+  ///       is handled via callback [onDG1FileRequested]. If not [PortError] is thrown.
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
-  /// Throws [PassIdError] when required data returned by [callback] is missing or
+  /// Throws [PortError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
   Future<void> login(Future<AuthnData> Function(ProtoChallenge challenge) callback, {bool sendEfDG1 = false}) async {
     _log.verbose('::login');
@@ -84,7 +84,7 @@ class PassIdClient {
         // Handle request for EfDG1 file
         if(!error.isDG1Required() || data.dg1 == null ||
            !(await _onDG1FileRequest?.call(data.dg1) ?? false)) {
-          throw _RethrowPassidError(error);
+          throw _RethrowPortError(error);
         }
         sendEfDG1 = true;
       }
@@ -102,12 +102,12 @@ class PassIdClient {
     return _api.ping(number);
   }
 
-  /// Establishes session by calling passID register API using [AuthnData] returned via [callback].
+  /// Establishes session by calling Port register API using [AuthnData] returned via [callback].
   /// [AuthnData] should have assigned fields: [dg15], [csig], [sod] and
   /// [dg14] if AA public key in [dg15] is of type [EC].
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
-  /// Throws [PassIdError] when required data returned by [callback] is missing or
+  /// Throws [PortError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
   Future<void> register(Future<AuthnData> Function(ProtoChallenge challenge) callback) async {
     _log.verbose('::register');
@@ -117,7 +117,7 @@ class PassIdClient {
     final data = await callback(_challenge);
     _throwIfMissingRequiredAuthnData(data);
     if(data.sod == null) {
-      throw throw PassIdError(-32602, 'Missing proto data to establish session');
+      throw throw PortError(-32602, 'Missing proto data to establish session');
     }
 
     _session = await _retriableCall(() =>
@@ -127,17 +127,17 @@ class PassIdClient {
     _resetChallenge();
   }
 
-  /// Calls passID sayHello API and returns greeting from server.
+  /// Calls Port sayHello API and returns greeting from server.
   /// Session must be established prior calling this function via
   /// either [register] or [login] method.
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
-  /// Throws [PassIdError] if session is not set or
+  /// Throws [PortError] if session is not set or
   /// invalid session parameters.
   Future<String> requestGreeting() {
     _log.verbose('::requestGreeting');
     if(_session == null) {
-      throw PassIdError(-32602, 'Session not established');
+      throw PortError(-32602, 'Session not established');
     }
     return _retriableCall(() =>
       _api.sayHello(_session)
@@ -153,11 +153,11 @@ class PassIdClient {
   /// Unhandled exceptions are passed on.
   /// For example when there is connection error and callback [_onConnectionError]
   /// returns true to retry connecting.
-  Future<T> _retriableCallEx<T> (Future<T> Function(PassIdError error) func, {PassIdError error}) async {
+  Future<T> _retriableCallEx<T> (Future<T> Function(PortError error) func, {PortError error}) async {
     try{
       return await func(error);
     }
-    on _RethrowPassidError catch(e) {
+    on _RethrowPortError catch(e) {
       e.unwrapAndThrow();
     }
     on SocketException catch(e) {
@@ -166,7 +166,7 @@ class PassIdClient {
       }
       rethrow;
     }
-    on PassIdError catch(e) {
+    on PortError catch(e) {
       return _retriableCallEx(func, error: e);
     }
   }
@@ -174,7 +174,7 @@ class PassIdClient {
   Future<T> _retriableCall<T> (Future<T> Function() func) async {
     return _retriableCallEx((error) {
       if(error != null) {
-        throw _RethrowPassidError(error);
+        throw _RethrowPortError(error);
       }
       return func();
     });
@@ -184,22 +184,22 @@ class PassIdClient {
     _challenge = null;
   }
 
-  /// Session data is data needed to establish PassID proto session
+  /// Session data is data needed to establish Port proto session
   /// e.g: dg15 (AA public key) and csig.
   void _throwIfMissingRequiredAuthnData(final AuthnData data) {
     if(data.dg15 == null ||
       (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null) ||
       data.csig == null || data.csig.isEmpty){
-        throw PassIdError(-32602, 'Missing required authentication data to establish session');
+        throw PortError(-32602, 'Missing required authentication data to establish session');
     }
   }
 }
 
-/// Wrapper exception for PassIdError to
+/// Wrapper exception for PortError to
 /// rethrow it in _retriableCallEx
-class _RethrowPassidError {
-  final PassIdError error;
-  _RethrowPassidError(this.error);
+class _RethrowPortError {
+  final PortError error;
+  _RethrowPortError(this.error);
   void unwrapAndThrow() {
     throw error;
   }

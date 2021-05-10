@@ -1,4 +1,4 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:io';
 
 import 'package:dmrtd/dmrtd.dart';
@@ -6,7 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
-import 'package:passide/preferences.dart';
+import 'package:egport/preferences.dart';
 import 'package:flutter/services.dart';
 
 import 'uie/authn_screen.dart';
@@ -23,16 +23,16 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   await Preferences.init();
-  final rawSrvCrt = await rootBundle.load('assets/certs/passid_srv.cer');
+  final rawSrvCrt = await rootBundle.load('assets/certs/port_server.cer');
   ServerSecurityContext.init(rawSrvCrt.buffer.asUint8List());
-  runApp(PassIdeApp());
+  runApp(EgPortApp());
 }
 
-class PassIdeApp extends StatelessWidget {
+class EgPortApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PassIDe',
+      title: 'egPort',
       localizationsDelegates: <LocalizationsDelegate>[
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -58,17 +58,17 @@ class PassIdeApp extends StatelessWidget {
                 borderSide: BorderSide(
                     color: Colors.white.withOpacity(0.87), width: 2.0),
               ))),
-      home: PassIdeWidget(),
+      home: EgPortWidget(),
     );
   }
 }
 
-class PassIdeWidget extends StatefulWidget {
+class EgPortWidget extends StatefulWidget {
   @override
-  _PassIdeWidgetState createState() => _PassIdeWidgetState();
+  _EgPortWidgetState createState() => _EgPortWidgetState();
 }
 
-class _PassIdeWidgetState extends State<PassIdeWidget>
+class _EgPortWidgetState extends State<EgPortWidget>
     with TickerProviderStateMixin {
   @override
   void initState() {

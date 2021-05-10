@@ -1,25 +1,25 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 
 import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:passid/passid.dart';
+import 'package:port/port.dart';
 
 import 'rpc/jrpc.dart';
 import 'rpc/jrpc_objects.dart';
 
-import 'passid_error.dart';
+import 'port_error.dart';
 import 'proto_challenge.dart';
 import 'session.dart';
 import 'uid.dart';
 
 
-class PassIdApi {
-  final _log = Logger('passid.api');
+class PortApi {
+  final _log = Logger('port.api');
   final JRPClient _rpc;
-  static const String _apiPrefix = 'passID.';
+  static const String _apiPrefix = 'port.';
 
   Duration get timeout => _rpc.httpClient.connectionTimeout;
   set timeout(Duration timeout) => _rpc.httpClient.connectionTimeout = timeout;
@@ -27,44 +27,44 @@ class PassIdApi {
   Uri get url => _rpc.url;
   set url(Uri url) => _rpc.url = url;
 
-  PassIdApi(Uri url, {HttpClient httpClient}) :
+  PortApi(Uri url, {HttpClient httpClient}) :
      _rpc = JRPClient(url, httpClient: httpClient ?? HttpClient());
 
 
 /******************************************** API CALLS *****************************************************/
 /************************************************************************************************************/
 
-  /// API: passID.ping
+  /// API: port.ping
   /// Sends [ping] and returns [pong] received from server.
-  /// Can throw [JRPClientError], [PassIdError] and [SocketException] on connection errors.
+  /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
   Future<int> ping(int ping) async {
-    _log.debug('passID.ping($ping) =>');
+    _log.debug('${_apiPrefix}ping($ping) =>');
     final resp = await _transceive(method: 'ping', params: {'ping': ping });
     _throwIfError(resp);
 
     final pong = resp['pong'] as int;
-    _log.debug('passID.ping <= pong: $pong');
+    _log.debug('${_apiPrefix}ping <= pong: $pong');
     return pong;
   }
 
-  /// API: passID.getChallenge
+  /// API: port.getChallenge
   /// Returns [ProtoChallenge] from server.
-  /// Can throw [JRPClientError], [PassIdError] and [SocketException] on connection errors.
+  /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
   Future<ProtoChallenge> getChallenge() async {
-    _log.debug('passID.getChallenge() =>');
+    _log.debug('${_apiPrefix}getChallenge() =>');
     final resp = await _transceive(method: 'getChallenge');
     _throwIfError(resp);
 
     final c = ProtoChallenge.fromJson(resp);
-    _log.debug('passID.getChallenge <= challenge: ${c.data.hex()}');
+    _log.debug('${_apiPrefix}getChallenge <= challenge: ${c.data.hex()}');
     return c;
   }
 
-  /// API: passID.cancelChallenge
+  /// API: port.cancelChallenge
   /// Notifies server to discard previously requested [challenge].
   /// [SocketException] on connection errors.
   Future<void> cancelChallenge(ProtoChallenge challenge) async {
-    _log.debug('passID.cancelChallenge(challenge=${challenge.data.hex()}) =>');
+    _log.debug('${_apiPrefix}cancelChallenge(challenge=${challenge.data.hex()}) =>');
     try {
       await _transceive(method: 'cancelChallenge', params: challenge.toJson(), notify: true);
     } catch(e) {
@@ -72,11 +72,11 @@ class PassIdApi {
     }
   }
 
-  /// API: passID.login
+  /// API: port.login
   /// Returns [Session] from server.
-  /// Can throw [JRPClientError], [PassIdError] and [SocketException] on connection errors.
+  /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
   Future<Session> login(UserId uid, CID cid, ChallengeSignature csig, { EfDG1 dg1 }) async {
-    _log.debug('passID.login() =>');
+    _log.debug('${_apiPrefix}login() =>');
     final params = {
       ...uid.toJson(),
       ...cid.toJson(),
@@ -88,15 +88,15 @@ class PassIdApi {
     _throwIfError(resp);
 
     final s = Session.fromJson(resp, uid: uid);
-    _log.debug('passID.login <= session= $s');
+    _log.debug('${_apiPrefix}login <= session= $s');
     return s;
   }
 
-  /// API: passID.register
+  /// API: port.register
   /// Returns [Session] from server.
-  /// Can throw [JRPClientError], [PassIdError] and [SocketException] on connection errors.
+  /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
   Future<Session> register(final EfSOD sod, final EfDG15 dg15, final CID cid, final ChallengeSignature csig, {EfDG14 dg14}) async {
-    _log.debug('passID.register() =>');
+    _log.debug('${_apiPrefix}register() =>');
     final params = {
       'sod' : sod.toBytes().base64(),
       'dg15' : dg15.toBytes().base64(),
@@ -109,15 +109,15 @@ class PassIdApi {
     _throwIfError(resp);
 
     final s = Session.fromJson(resp);
-    _log.debug('passID.register <= session= $s');
+    _log.debug('${_apiPrefix}register <= session= $s');
     return s;
   }
 
-  /// API: passID.sayHello
+  /// API: port.sayHello
   /// Returns [String] greeting message from server.
-  /// Can throw [JRPClientError], [PassIdError] and [SocketException] on connection errors.
+  /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
   Future<String> sayHello(Session session) async {
-    _log.debug('passID.sayHello() => session=$session');
+    _log.debug('${_apiPrefix}sayHello() => session=$session');
 
     final mac = session.calculateMAC(apiName: 'sayHello', rawParams: session.uid.toBytes());
     final params = {
@@ -129,7 +129,7 @@ class PassIdApi {
     _throwIfError(resp);
 
     final srvMsg = resp['msg'] as String;
-    _log.debug('passID.register <= srvMsg="$srvMsg"');
+    _log.debug('${_apiPrefix}register <= srvMsg="$srvMsg"');
     return srvMsg;
   }
 
@@ -143,7 +143,7 @@ class PassIdApi {
 
   void _throwIfError(dynamic resp) {
     if(resp is JRpcError) {
-      throw PassIdError(resp.code, resp.message);
+      throw PortError(resp.code, resp.message);
     }
   }
 }

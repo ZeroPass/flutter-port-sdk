@@ -1,11 +1,11 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:math';
 
 import 'package:dmrtd/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
-import 'package:passid/passid.dart';
+import 'package:port/port.dart';
 
 import '../preferences.dart';
 import '../srv_sec_ctx.dart';
@@ -179,7 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ServerSecurityContext.getHttpClient(timeout: timeout)
                       ..badCertificateCallback = badCertificateHostCheck;
 
-                final pidc = PassIdClient(srvUrl, httpClient: client);
+                final pidc = PortClient(srvUrl, httpClient: client);
                 try {
                   await pidc.ping(Random().nextInt(0xffffffff));
                   _showSnackBar(context, 'Connection succeeded');

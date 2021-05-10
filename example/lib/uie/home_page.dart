@@ -1,7 +1,7 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 
 import 'package:flutter/material.dart';
-import 'package:passide/uie/uiutils.dart';
+import 'package:egport/uie/uiutils.dart';
 
 Widget HomePage(
     BuildContext context, Function onSignupPressed, Function onLoginPressed) {
@@ -24,7 +24,7 @@ Widget HomePage(
           padding: EdgeInsets.only(top: 100.0),
           child: Center(
             child: Image(
-              image: AssetImage('assets/images/passid.png'),
+              image: AssetImage('assets/images/port.png'),
               fit: BoxFit.scaleDown,
               height: 70,
               width: 70,
@@ -38,14 +38,14 @@ Widget HomePage(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                'Pass',
+                'eg',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 30.0,
                 ),
               ),
               Text(
-                'IDe',
+                'Port',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 30.0,

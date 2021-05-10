@@ -1,11 +1,11 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_cache_builder.dart';
 import 'package:flare_flutter/provider/asset_flare.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:passid/passid.dart';
-import 'package:passide/uie/uiutils.dart';
+import 'package:port/port.dart';
+import 'package:egport/uie/uiutils.dart';
 import 'authn_screen.dart';
 
 class SuccessScreen extends StatelessWidget {

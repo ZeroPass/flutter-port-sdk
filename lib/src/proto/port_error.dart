@@ -1,6 +1,6 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 
-class PassIdError implements Exception{
+class PortError implements Exception{
   static const int accountConflict        = 409; // Returned when trying to register with existing account
   static const int credentialsExpired     = 498; // Signed challenge used in API call has expired
                                                  // or credentials used to make proto session has expired e.g. account expired
@@ -16,12 +16,12 @@ class PassIdError implements Exception{
 
   final int code;
   final String message;
-  PassIdError(this.code, this.message);
+  PortError(this.code, this.message);
   @override
-  String toString() => 'PassIdError(code=$code, error=$message)';
+  String toString() => 'PortError(code=$code, error=$message)';
 
   bool isDG1Required() {
-    return code == PassIdError.preconditionRequired &&
+    return code == PortError.preconditionRequired &&
       message.toLowerCase().contains('dg1 required');
   }
 }

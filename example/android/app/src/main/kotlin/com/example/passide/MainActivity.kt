@@ -1,4 +1,4 @@
-package com.example.passide
+package org.example.egport
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

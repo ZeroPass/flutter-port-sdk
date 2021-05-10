@@ -1,4 +1,4 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'package:dart_countries_states/country_provider.dart';
 import 'package:dart_countries_states/models/alpha2_codes.dart';
 import 'package:dart_countries_states/models/alpha3_code.dart';

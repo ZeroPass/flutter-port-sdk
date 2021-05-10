@@ -1,4 +1,4 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:io';
 
 import 'package:async/async.dart';
@@ -7,7 +7,7 @@ import 'package:dmrtd/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:passid/passid.dart';
+import 'package:port/port.dart';
 
 import 'uie/authn_screen.dart';
 import 'uie/nfc_scan_dialog.dart';
@@ -38,7 +38,7 @@ class PassportScanner {
         });
       }
 
-  /// Reads data from passport and signs passID proto [challenge]
+  /// Reads data from passport and signs Port proto [challenge]
   /// with passport's AA private key. Call to this function
   /// displays sheet modal dialog informing the user on scanning progress.
   /// User can also cancel scanning of passport via dialog.

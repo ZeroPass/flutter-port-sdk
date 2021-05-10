@@ -1,9 +1,9 @@
-//  Created by smlu, copyright © 2020 ZeroPass. All rights reserved.
+//  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'package:dmrtd/dmrtd.dart';
 import 'package:meta/meta.dart';
 import 'proto/challenge_signature.dart';
 
-/// Class holds data needed for passID authentication.
+/// Class holds data needed for Port authentication.
 /// e.g.: used at registration and login.
 class AuthnData  {
   final EfSOD sod;
