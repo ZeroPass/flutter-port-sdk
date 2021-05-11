@@ -14,23 +14,19 @@ description: 'Port example client app.'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.2.2 <3.0.0"
+  sdk: ">=2.7.0 <3.0.0"
 
 publish_to: none # git packages
 
 dependencies:
-  connectivity: ^1.0.0
-  dart_countries_states: ^0.0.8
-  dmrtd:
-    git:
-      url: https://github.com/ZeroPass/dmrtd.git
-  flare_flutter: ^2.0.3
+  connectivity: ^3.0.3
+  dart_countries_states: ^0.1.1
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   flutter_widgets: ^0.1.12
-  flutter_launcher_icons: ^0.7.5
+  flutter_launcher_icons: ^0.9.0
   intl: ^0.17.0
   open_settings:
     git:
@@ -41,8 +37,9 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.3
-  shared_preferences: ^0.5.7+1
+  cupertino_icons: ^1.0.3
+  shared_preferences: ^2.0.5
+  flare_flutter: ^3.0.0
 
 dev_dependencies:
   flutter_test:
