@@ -62,8 +62,14 @@ Future<T> showAlert<T>(BuildContext context, Widget title, Widget content,
       return WillPopScope(
           onWillPop: () async =>
               false, // prevent closing on back button pressed
-          child: AlertDialog(
-              key: key, title: title, content: content, actions: actions));
+          child:
+              AlertDialog(key: key, title: title, content: content, actions: [
+            SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: actions))
+          ]));
     },
   );
 }
