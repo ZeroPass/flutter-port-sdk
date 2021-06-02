@@ -146,7 +146,7 @@ class PortClient {
 
   Future<void> _getNewChallenge() async {
     _challenge = await _api.getChallenge();
-    _log.debug('Recieved new challenge: ${_challenge.toString()}');
+    _log.debug('Received new challenge: ${_challenge.toString()}');
   }
 
   /// Function recursively calls [func] in case of a handled exception until result is returned.

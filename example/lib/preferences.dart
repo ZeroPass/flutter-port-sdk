@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Preferences {
 
-  static final Uri defaltServerUrl     = Uri.parse('https://127.0.0.1:443');
+  static final Uri defaultServerUrl    = Uri.parse('https://127.0.0.1:443');
   static const Duration defaultTimeout = Duration(seconds:5); // sec
 
   static const String _srvUrl  = 'serverUrl';
@@ -46,7 +46,7 @@ class Preferences {
     if(url != null) {
       return Uri.parse(url);
     }
-    return  defaltServerUrl;
+    return  defaultServerUrl;
   }
 
   static Future<bool> setServerUrl(Uri url) async {

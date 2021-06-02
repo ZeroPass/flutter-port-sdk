@@ -44,7 +44,7 @@ class _AuthnScreenState extends State<AuthnScreen>
   var _isScanningMrtd = false;
 
   final GlobalKey _keyNfcAlert = GlobalKey();
-  bool _isBusyIndecatorVisible = false;
+  bool _isBusyIndicatorVisible = false;
   final GlobalKey<State> _keyBusyIndicator =
       GlobalKey<State>(debugLabel: 'key_action_screen_busy_indicator');
 
@@ -517,15 +517,15 @@ class _AuthnScreenState extends State<AuthnScreen>
   Future<void> _showBusyIndicator({String msg = 'Please Wait ....'}) async {
     await _hideBusyIndicator();
     await showBusyDialog(context, _keyBusyIndicator, msg: msg);
-    _isBusyIndecatorVisible = true;
+    _isBusyIndicatorVisible = true;
   }
 
   Future<void> _hideBusyIndicator({ Duration syncWait = const Duration(milliseconds: 200)}) async {
     if (_keyBusyIndicator.currentContext != null) {
       await hideBusyDialog(_keyBusyIndicator,
           syncWait: syncWait);
-      _isBusyIndecatorVisible = false;
-    } else if (_isBusyIndecatorVisible) {
+      _isBusyIndicatorVisible = false;
+    } else if (_isBusyIndicatorVisible) {
       await Future.delayed(const Duration(milliseconds: 200), () async {
         await _hideBusyIndicator();
       });

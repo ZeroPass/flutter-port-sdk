@@ -199,7 +199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<Uri> _saveSrvUrlInput() async {
     var url = _srvUrl.text;
     if (!_isValidUrl(url)) {
-      url = Preferences.defaltServerUrl.toString();
+      url = Preferences.defaultServerUrl.toString();
       _srvUrl.text = url;
     }
     final uri = Uri.parse(url);
