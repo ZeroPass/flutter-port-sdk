@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:uuid/uuid_util.dart';
 
@@ -24,8 +23,8 @@ class JRPClient {
   JRpcVersion rpcVersion = JRpcVersion.v2;
   bool persistentConnection;
   HttpClient httpClient = HttpClient();
-  String userAgent;
-  String origin;
+  String? userAgent;
+  String? origin;
   Uri url;
 
   final _log = Logger('jrpc');
@@ -34,13 +33,13 @@ class JRPClient {
   /// optional parameters:
   ///   [httpClient], http headers [origin] & [userAgetnt] and [persistentConnection]
   JRPClient(this.url,
-      {this.httpClient,
+      {required this.httpClient,
       this.origin,
       this.userAgent,
       this.persistentConnection = true});
 
   /// Call the method on the server. Returns Future<null>
-  void notify({@required final String method, final dynamic params}) {
+  void notify({required final String method, final dynamic params}) {
     call(method: method, params: params, notify: true);
   }
 
@@ -49,7 +48,7 @@ class JRPClient {
   /// If [notify] is true, procedure is invoked as notification and no data is returned.
   /// Returns the response.
   ///
-  Future<dynamic> call({ @required final String method, final dynamic params = const [], notify = false }) async {
+  Future<dynamic> call({ required final String method, final dynamic params = const [], notify = false }) async {
     final reqId = notify ? null : Uuid().v4(options: {'rng': UuidUtil.cryptoRNG});
     var req = JRpcRequest(method, params, reqId, version: rpcVersion);
 
@@ -81,11 +80,11 @@ class JRPClient {
     request.persistentConnection = persistentConnection;
     request.headers.add(HttpHeaders.acceptHeader, 'application/json');
     request.headers.add(HttpHeaders.contentTypeHeader, 'application/json');
-    if (origin != null && origin.isNotEmpty) {
-      request.headers.add('Origin', origin);
+    if (origin != null && origin!.isNotEmpty) {
+      request.headers.add('Origin', origin!);
     }
-    if (userAgent != null && userAgent.isNotEmpty) {
-      request.headers.add(HttpHeaders.userAgentHeader, userAgent);
+    if (userAgent != null && userAgent!.isNotEmpty) {
+      request.headers.add(HttpHeaders.userAgentHeader, userAgent!);
     }
 
     // Add json payload and send request
@@ -93,7 +92,7 @@ class JRPClient {
     return request.close();
   }
 
-  Future<dynamic> _handleResonse(final HttpClientResponse resp, {@required final reqNotify}) async {
+  Future<dynamic> _handleResonse(final HttpClientResponse resp, {required final reqNotify}) async {
     _log.debug('Received response with status code: ${resp.statusCode}');
     final content = await resp.transform(utf8.decoder).join();
     _log.deVerbose('Response content="$content"');
@@ -120,7 +119,7 @@ class JRPClient {
     throw JRPClientError('Request error: statusCode=${resp.statusCode} headers="${resp.headers}" content="$content"');
   }
 
-  dynamic _handleJRpcResponse(String reqId, JRpcResponse response) {
+  dynamic _handleJRpcResponse(String? reqId, JRpcResponse response) {
     assert(reqId == response.id);
     if(response.isError()) {
       return response.error;

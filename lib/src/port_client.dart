@@ -16,18 +16,18 @@ class PortClient {
 
   final _log = Logger('port.client');
   final PortApi _api;
-  ProtoChallenge _challenge;
-  Session _session;
-  Future<bool> Function(SocketException e) _onConnectionError;
-  Future<bool> Function(EfDG1 dg1) _onDG1FileRequest;
+  ProtoChallenge? _challenge;
+  Session? _session;
+  Future<bool> Function(SocketException e)? _onConnectionError;
+  Future<bool> Function(EfDG1 dg1)? _onDG1FileRequest;
 
   /// Returns connection timeout.
-  Duration get timeout => _api.timeout;
-  set timeout(Duration timeout) => _api.timeout = timeout;
+  Duration? get timeout => _api.timeout;
+  set timeout(Duration? timeout) => _api.timeout = timeout;
 
   /// Returns [UserId] or [null]
   /// if session is not established yet.
-  UserId get uid => _session?.uid;
+  UserId? get uid => _session?.uid;
 
   /// Returns server [Uri] url.
   Uri get url => _api.url;
@@ -35,7 +35,7 @@ class PortClient {
 
   /// Constructs new [PortClient] using server [url] address and
   /// optionally [httpClient].
-  PortClient(Uri url, {HttpClient httpClient}) :
+  PortClient(Uri url, {HttpClient? httpClient}) :
     _api = PortApi(url, httpClient: httpClient ?? HttpClient());
 
 
@@ -54,7 +54,7 @@ class PortClient {
   /// establishment challenge used for register/login.
   void disposeChallenge() {
     if(_challenge != null) {
-       _api.cancelChallenge(_challenge);
+       _api.cancelChallenge(_challenge!);
       _resetChallenge();
     }
   }
@@ -75,7 +75,7 @@ class PortClient {
     await _retriableCall(_getNewChallenge);
 
      _log.verbose('Invoking callback with recieved challenge');
-    final data = await callback(_challenge);
+    final data = await callback(_challenge!);
     _throwIfMissingRequiredAuthnData(data);
 
     final uid = UserId.fromDG15(data.dg15);
@@ -83,13 +83,13 @@ class PortClient {
       if(error != null) {
         // Handle request for EfDG1 file
         if(!error.isDG1Required() || data.dg1 == null ||
-           !(await _onDG1FileRequest?.call(data.dg1) ?? false)) {
+           !(await _onDG1FileRequest?.call(data.dg1!) ?? false)) {
           throw _RethrowPortError(error);
         }
         sendEfDG1 = true;
       }
       final dg1 = sendEfDG1 ? data.dg1 : null;
-      return _api.login(uid, _challenge.id, data.csig, dg1: dg1);
+      return _api.login(uid, _challenge!.id, data.csig, dg1: dg1);
     });
 
     _resetChallenge();
@@ -114,14 +114,14 @@ class PortClient {
     await _retriableCall(_getNewChallenge);
 
     _log.verbose('Invoking callback with recieved challenge');
-    final data = await callback(_challenge);
+    final data = await callback(_challenge!);
     _throwIfMissingRequiredAuthnData(data);
     if(data.sod == null) {
       throw throw PortError(-32602, 'Missing proto data to establish session');
     }
 
     _session = await _retriableCall(() =>
-      _api.register(data.sod, data.dg15, _challenge.id, data.csig, dg14: data.dg14)
+      _api.register(data.sod!, data.dg15, _challenge!.id, data.csig, dg14: data.dg14)
     );
 
     _resetChallenge();
@@ -140,7 +140,7 @@ class PortClient {
       throw PortError(-32602, 'Session not established');
     }
     return _retriableCall(() =>
-      _api.sayHello(_session)
+      _api.sayHello(_session!)
     );
   }
 
@@ -153,7 +153,7 @@ class PortClient {
   /// Unhandled exceptions are passed on.
   /// For example when there is connection error and callback [_onConnectionError]
   /// returns true to retry connecting.
-  Future<T> _retriableCallEx<T> (Future<T> Function(PortError error) func, {PortError error}) async {
+  Future<T> _retriableCallEx<T> (Future<T> Function(PortError? error) func, {PortError? error}) async {
     try{
       return await func(error);
     }
@@ -187,9 +187,8 @@ class PortClient {
   /// Session data is data needed to establish Port proto session
   /// e.g: dg15 (AA public key) and csig.
   void _throwIfMissingRequiredAuthnData(final AuthnData data) {
-    if(data.dg15 == null ||
-      (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null) ||
-      data.csig == null || data.csig.isEmpty){
+    if( (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null)
+      || data.csig.isEmpty){
         throw PortError(-32602, 'Missing required authentication data to establish session');
     }
   }
@@ -200,7 +199,7 @@ class PortClient {
 class _RethrowPortError {
   final PortError error;
   _RethrowPortError(this.error);
-  void unwrapAndThrow() {
+  Never unwrapAndThrow() {
     throw error;
   }
 }

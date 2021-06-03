@@ -20,7 +20,7 @@ class JRpcRequest {
 
   final dynamic params;
 
-  final String id;
+  final String? id;
   final JRpcVersion version;
 
   JRpcRequest(this.method, this.params, this.id, {this.version = JRpcVersion.v2}) {
@@ -29,7 +29,7 @@ class JRpcRequest {
     }
   }
 
-  bool isNotification() => id == null || id.isEmpty;
+  bool isNotification() => id == null || id!.isEmpty;
 
   /// Returns JSON map.
    Map<String, dynamic> toJson() {
@@ -85,10 +85,10 @@ class JRpcError implements Exception {
 /// JRpcRequest represents JSON-RPC Response object
 class JRpcResponse {
 
-  final String id;
+  final String? id;
   final JRpcVersion version;
   final dynamic result;
-  final JRpcError error;
+  final JRpcError? error;
 
   JRpcResponse(this.id, {this.result, this.error, this.version = JRpcVersion.v2}) {
     assert(result != null || error != null);
@@ -110,7 +110,7 @@ class JRpcResponse {
       id = (json['id'] as int).toRadixString(10);
     }
     else {
-      id = json['id'] as String;
+      id = json['id'] as String?;
     }
 
     if(json.containsKey('error')) {
@@ -140,7 +140,7 @@ class JRpcResponse {
       json['result'] = result;
     }
     else {
-      json['error'] = con.json.encode(error.toJson());
+      json['error'] = con.json.encode(error!.toJson());
     }
     return json;
   }

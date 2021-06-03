@@ -2,23 +2,22 @@
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:dmrtd/extensions.dart';
-import 'package:meta/meta.dart';
 
 import 'session_key.dart';
 import 'uid.dart';
 
 class SessionMac  {
-  
+
   static const _serKey = 'mac';
-  Uint8List _mac;
-    
+  late Uint8List _mac;
+
   SessionMac(final Uint8List rawMac) {
     if(rawMac.length != 32) {
       throw ArgumentError.value(rawMac, 'rawMac', 'Invalid length');
     }
     _mac = rawMac;
   }
-  
+
   factory SessionMac.fromJson(final Map<String, dynamic> json) {
     if (!json.containsKey(_serKey)) {
     throw ArgumentError.value(json, 'json',
@@ -35,14 +34,14 @@ class SessionMac  {
 
 class Session {
   //typealias hmac = HMAC<SHA256>
-  
+
   final UserId uid;
   final SessionKey key;
   final DateTime expiry;
   int _nonce = 0;
 
-  Session({@required this.uid, @required this.key, @required this.expiry});
-  factory Session.fromJson(final Map<String, dynamic> json, {UserId uid}) {
+  Session({required this.uid, required this.key, required this.expiry});
+  factory Session.fromJson(final Map<String, dynamic> json, {UserId? uid}) {
     uid = uid ?? UserId.fromJson(json);
     final key = SessionKey.fromJson(json);
 
@@ -56,8 +55,8 @@ class Session {
       expiry: DateTime.fromMillisecondsSinceEpoch(expiry * 1000)
     );
   }
-  
-  SessionMac calculateMAC({ @required String apiName, @required Uint8List rawParams }) {
+
+  SessionMac calculateMAC({ required String apiName, required Uint8List rawParams }) {
       // TODO: make log
     final msg = _getEncodedNonce() + apiName.codeUnits + rawParams;
     _incrementNonce();

@@ -4,15 +4,15 @@ import 'package:dmrtd/extensions.dart';
 
 class SessionKey  {
   static const _serKey = 'session_key';
-  Uint8List _key;
-    
+  late final Uint8List _key;
+
   SessionKey(final Uint8List rawKey) {
     if(rawKey.length != 32) {
       throw ArgumentError.value(rawKey, 'rawKey', 'Invalid length');
     }
     _key = rawKey;
   }
-  
+
   factory SessionKey.fromJson(final Map<String, dynamic> json) {
     if (!json.containsKey(_serKey)) {
     throw ArgumentError.value(json, 'json',

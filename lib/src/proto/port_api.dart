@@ -1,10 +1,8 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
-
 import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:port/port.dart';
 
 import 'rpc/jrpc.dart';
@@ -21,13 +19,13 @@ class PortApi {
   final JRPClient _rpc;
   static const String _apiPrefix = 'port.';
 
-  Duration get timeout => _rpc.httpClient.connectionTimeout;
-  set timeout(Duration timeout) => _rpc.httpClient.connectionTimeout = timeout;
+  Duration? get timeout => _rpc.httpClient.connectionTimeout;
+  set timeout(Duration? timeout) => _rpc.httpClient.connectionTimeout = timeout;
 
   Uri get url => _rpc.url;
   set url(Uri url) => _rpc.url = url;
 
-  PortApi(Uri url, {HttpClient httpClient}) :
+  PortApi(Uri url, {HttpClient? httpClient}) :
      _rpc = JRPClient(url, httpClient: httpClient ?? HttpClient());
 
 
@@ -75,7 +73,7 @@ class PortApi {
   /// API: port.login
   /// Returns [Session] from server.
   /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
-  Future<Session> login(UserId uid, CID cid, ChallengeSignature csig, { EfDG1 dg1 }) async {
+  Future<Session> login(UserId uid, CID cid, ChallengeSignature csig, { EfDG1? dg1 }) async {
     _log.debug('${_apiPrefix}login() =>');
     final params = {
       ...uid.toJson(),
@@ -95,7 +93,7 @@ class PortApi {
   /// API: port.register
   /// Returns [Session] from server.
   /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
-  Future<Session> register(final EfSOD sod, final EfDG15 dg15, final CID cid, final ChallengeSignature csig, {EfDG14 dg14}) async {
+  Future<Session> register(final EfSOD sod, final EfDG15 dg15, final CID cid, final ChallengeSignature csig, {EfDG14? dg14}) async {
     _log.debug('${_apiPrefix}register() =>');
     final params = {
       'sod' : sod.toBytes().base64(),
@@ -136,7 +134,7 @@ class PortApi {
 /******************************************** API CALLS END *************************************************/
 /************************************************************************************************************/
 
-  Future<dynamic> _transceive({ @required String method, dynamic params, bool notify = false }) {
+  Future<dynamic> _transceive({ required String method, dynamic params, bool notify = false }) {
     final apiMethod = _apiPrefix + method;
     return _rpc.call(method: apiMethod, params: params, notify: notify);
   }

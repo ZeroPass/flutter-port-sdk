@@ -6,7 +6,7 @@ import 'package:dmrtd/extensions.dart';
 
 class UserId  {
   static const _serKey = 'uid';
-  Uint8List _uid;
+  late final Uint8List _uid;
 
   UserId(final Uint8List rawUid) {
     if(rawUid.length != RIPEMD160Digest().digestSize) {
