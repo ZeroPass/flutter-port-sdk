@@ -51,7 +51,7 @@ String formatProgressMsg(String message, int percentProgress) {
 String formatDgTagSet(final Set<DgTag> tags) {
   var str = '[';
   for(final t in tags) {
-    str += mapDgTagName[t] + ', ';
+    str += mapDgTagName[t]! + ', ';
   }
   return str.substring(0, str.length -2) + ']';
 }

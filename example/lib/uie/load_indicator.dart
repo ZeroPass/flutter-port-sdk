@@ -30,10 +30,10 @@ class LoadIndicator extends StatefulWidget {
 
 class _LoadIndicatorState extends State<LoadIndicator>
     with SingleTickerProviderStateMixin {
-  Animation<double> animation_1;
-  Animation<double> animation_2;
-  Animation<double> animation_3;
-  AnimationController controller;
+  late Animation<double> animation_1;
+  late Animation<double> animation_2;
+  late Animation<double> animation_3;
+  late AnimationController controller;
 
   @override
   void initState() {
@@ -147,11 +147,11 @@ class _LoadIndicatorState extends State<LoadIndicator>
 
 class Dot extends StatelessWidget {
   final double radius;
-  final Color color;
+  final Color? color;
   final DotType type;
   final Icon icon;
 
-  Dot({this.radius, this.color, this.type, this.icon});
+  Dot({required this.radius, this.color, required this.type, required this.icon});
 
   @override
   Widget build(BuildContext context) {

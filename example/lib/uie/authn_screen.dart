@@ -27,7 +27,7 @@ enum AuthnAction { register, login }
 
 class AuthnScreen extends StatefulWidget {
   final AuthnAction _action;
-  AuthnScreen(this._action, {Key key}) : super(key: key);
+  AuthnScreen(this._action, {Key? key}) : super(key: key);
   _AuthnScreenState createState() => _AuthnScreenState(_action);
 }
 
@@ -38,7 +38,7 @@ class _AuthnScreenState extends State<AuthnScreen>
 
   final AuthnAction _action;
   final _log = Logger('action.screen');
-  PortClient _client;
+  PortClient? _client;
 
   var _isNfcAvailable = false;
   var _isScanningMrtd = false;
@@ -49,7 +49,7 @@ class _AuthnScreenState extends State<AuthnScreen>
       GlobalKey<State>(debugLabel: 'key_action_screen_busy_indicator');
 
   // Data needed for Port protocol
-  ProtoChallenge _challenge;
+  ProtoChallenge? _challenge;
   final _authnData = Completer<AuthnData>();
 
   // mrz data
@@ -59,12 +59,12 @@ class _AuthnScreenState extends State<AuthnScreen>
   final _doe = TextEditingController(); // date of doc expiry
 
   // UI components
-  IconButton _settingsButton;
+  IconButton? _settingsButton;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance!.addObserver(this);
 
     final httpClient = ServerSecurityContext
       .getHttpClient(timeout: Preferences.getConnectionTimeout())
@@ -81,13 +81,13 @@ class _AuthnScreenState extends State<AuthnScreen>
           try {
             // Init PortClient
             _client = PortClient(Preferences.getServerUrl(), httpClient: httpClient);
-            _client.onConnectionError  = _handleConnectionError;
-            _client.onDG1FileRequested = _handleDG1Request;
+            _client!.onConnectionError  = _handleConnectionError;
+            _client!.onDG1FileRequested = _handleDG1Request;
 
             // Execute authn action on Port client
             switch(_action) {
               case AuthnAction.register:
-                await _client.register((challenge) async {
+                await _client!.register((challenge) async {
                   _hideBusyIndicator();
                   return _getAuthnData(challenge).then((data) {
                     _showBusyIndicator(msg: 'Signing up ...');
@@ -96,7 +96,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                 });
                 break;
               case AuthnAction.login:
-              await _client.login((challenge) async {
+              await _client!.login((challenge) async {
                   _hideBusyIndicator();
                   return _getAuthnData(challenge).then((data) {
                     _showBusyIndicator(msg: 'Logging in ...');
@@ -108,16 +108,16 @@ class _AuthnScreenState extends State<AuthnScreen>
 
             // Request greeting from server and on successful
             // response show SuccessScreen
-            final srvMsg = await _client.requestGreeting();
+            final srvMsg = await _client!.requestGreeting();
             await _hideBusyIndicator(syncWait: Duration(seconds: 0));
             Navigator.pushReplacement(
               context, CupertinoPageRoute(
-                builder: (context) => SuccessScreen(_action, _client.uid, srvMsg),
+                builder: (context) => SuccessScreen(_action, _client!.uid, srvMsg),
             ));
           }
           catch(e) {
-            String alertTitle;
-            String alertMsg;
+            String? alertTitle;
+            String? alertMsg;
             if (e is SocketException) {} // should be already handled through _handleConnectionError callback
             else if(e is PortError) {
               if(!e.isDG1Required()) { // DG1 required error should be handled through _handleDG1Request callback
@@ -182,7 +182,7 @@ class _AuthnScreenState extends State<AuthnScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance!.removeObserver(this);
     _client?.disposeChallenge();
     super.dispose();
   }
@@ -204,7 +204,7 @@ class _AuthnScreenState extends State<AuthnScreen>
   }
 
   @override
-  void didChangeLocales(List<Locale> locale) {
+  void didChangeLocales(List<Locale>? locale) {
     super.didChangeLocales(locale);
   }
 
@@ -212,13 +212,13 @@ class _AuthnScreenState extends State<AuthnScreen>
   Widget build(BuildContext context) {
     _settingsButton = settingsButton(
       context,
-      onWillPop: () {
+      onWillPop: (){
         final timeout = Preferences.getConnectionTimeout();
         final url = Preferences.getServerUrl();
         _log.verbose('Updating client timeout=$timeout url=$url');
-        _client.timeout = timeout;
-        _client.url     = url;
-    });
+        _client!.timeout = timeout;
+        _client!.url     = url;
+    } as Future<void> Function()?);
 
     return Scaffold(
             backgroundColor: Theme.of(context).backgroundColor,
@@ -232,7 +232,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                   onPressed: () => _goToMain(),
                 ),
                 actions: <Widget>[
-                 _settingsButton
+                 _settingsButton!
                 ],
             ),
             body: Container(
@@ -309,7 +309,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                 textCapitalization: TextCapitalization.characters,
                 autofocus: true,
                 validator: (value) {
-                  if (value.isEmpty) {
+                  if (value!.isEmpty) {
                     return 'Please enter passport number';
                   }
                   return null;
@@ -322,7 +322,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                   decoration: const InputDecoration(labelText: 'Date of Birth'),
                   autofocus: false,
                   validator: (value) {
-                    if (value.isEmpty) {
+                    if (value!.isEmpty) {
                       return 'Please select Date of Birth';
                     }
                     return null;
@@ -353,7 +353,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                     const InputDecoration(labelText: 'Date of Expiry'),
                 autofocus: false,
                 validator: (value) {
-                  if (value.isEmpty) {
+                  if (value!.isEmpty) {
                     return 'Please select Date of Expiry';
                   }
                   return null;
@@ -390,14 +390,14 @@ class _AuthnScreenState extends State<AuthnScreen>
     _challenge = challenge;
     return _authnData.future;
   }
-  DateTime _getDOBDate() {
+  DateTime? _getDOBDate() {
     if (_dob.text.isEmpty) {
       return null;
     }
     return DateFormat.yMd().parse(_dob.text);
   }
 
-  DateTime _getDOEDate() {
+  DateTime? _getDOEDate() {
     if (_doe.text.isEmpty) {
       return null;
     }
@@ -429,7 +429,7 @@ class _AuthnScreenState extends State<AuthnScreen>
               "${_action == AuthnAction.register ? "sign up" : "login"}.";
     }
     else {
-      settingsAction = () => _settingsButton.onPressed();
+      settingsAction = () => _settingsButton!.onPressed!();
       title = 'Connection error';
       msg   = 'Failed to connect to server.\n'
               'Check server connection settings.';
@@ -451,7 +451,7 @@ class _AuthnScreenState extends State<AuthnScreen>
             'SETTINGS',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          onPressed: settingsAction,
+          onPressed: settingsAction as void Function()?,
         ),
         FlatButton(
           child: const Text(
@@ -461,14 +461,14 @@ class _AuthnScreenState extends State<AuthnScreen>
           onPressed: () => Navigator.pop(context, true)
         )
       ]
-    );
+    ) as Future<bool>;
   }
 
   // Returns true if client should retry connection action
   // otherwise false.
   Future<bool> _handleDG1Request(final EfDG1 dg1) async {
     _log.debug('Handling request for file EfDG1');
-    return showEfDG1Dialog(
+    return showEfDG1Dialog<bool>(
       context,
       dg1,
       message: 'Server requested additional data',
@@ -511,7 +511,7 @@ class _AuthnScreenState extends State<AuthnScreen>
           ),
         )
       ]
-    );
+    ) as Future<bool>;
   }
 
   Future<void> _showBusyIndicator({String msg = 'Please Wait ....'}) async {
@@ -560,7 +560,7 @@ class _AuthnScreenState extends State<AuthnScreen>
 
   void _hideNfcAlert() async {
     if (_keyNfcAlert.currentContext != null) {
-      Navigator.of(_keyNfcAlert.currentContext, rootNavigator: true).pop();
+      Navigator.of(_keyNfcAlert.currentContext!, rootNavigator: true).pop();
     }
   }
 
@@ -571,7 +571,7 @@ class _AuthnScreenState extends State<AuthnScreen>
         _isScanningMrtd = true;
       });
 
-      final dbaKeys = DBAKeys(_docNumber.text, _getDOBDate(), _getDOEDate());
+      final dbaKeys = DBAKeys(_docNumber.text, _getDOBDate()!, _getDOEDate()!);
       final data = await PassportScanner(
         context: context,
         challenge: _challenge,

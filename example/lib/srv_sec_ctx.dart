@@ -4,7 +4,7 @@
 import 'dart:io';
 
 class ServerSecurityContext  {
-  static SecurityContext _ctx;
+  static SecurityContext? _ctx;
 
   /// 'Globally' init ctx using server certificate (.cer) bytes.
   /// [servCertBytes] should be single certificate because sha1 
@@ -12,10 +12,10 @@ class ServerSecurityContext  {
   /// certificate in _certificateCheck.
   static init(List<int> servCertBytes) {
     _ctx = SecurityContext();
-    _ctx.setTrustedCertificatesBytes(servCertBytes);
+    _ctx!.setTrustedCertificatesBytes(servCertBytes);
   }
 
-  static HttpClient getHttpClient({Duration timeout}) {
+  static HttpClient getHttpClient({Duration? timeout}) {
     final c = HttpClient(context: _ctx);
     if(timeout != null) {
       c.connectionTimeout = timeout;

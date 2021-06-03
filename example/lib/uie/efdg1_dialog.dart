@@ -1,4 +1,6 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
+import 'dart:async';
+
 import 'package:dart_countries_states/country_provider.dart';
 import 'package:dart_countries_states/models/alpha2_codes.dart';
 import 'package:dart_countries_states/models/alpha3_code.dart';
@@ -10,25 +12,25 @@ import '../utils.dart';
 import 'uiutils.dart';
 
 // Dialog displays MRZ data stored in file EF.DG1
-Future<T> showEfDG1Dialog<T>(BuildContext context, EfDG1 dg1,
-    {String message, List<Widget> actions}) {
+Future<T?>? showEfDG1Dialog<T>(BuildContext context, EfDG1 dg1,
+    {String? message, List<Widget>? actions}) {
   return EfDG1Dialog(context, dg1, message: message, actions: actions).show();
 }
 
 class EfDG1Dialog {
   final EfDG1 dg1;
   final BuildContext context;
-  final String message;
-  final List<Widget> actions;
+  final String? message;
+  final List<Widget>? actions;
   final _countryProvider = CountryProvider();
   String _issuingCountry = '';
   String _nationality = '';
-  StateSetter _sheetSetter;
+  StateSetter? _sheetSetter;
 
   EfDG1Dialog(this.context, this.dg1, {this.message, this.actions}) {
     _formatCountryCode(dg1.mrz.country).then((c) {
       if (_sheetSetter != null) {
-        _sheetSetter(() => _issuingCountry = c);
+        _sheetSetter!(() => _issuingCountry = c);
       } else {
         _issuingCountry = c;
       }
@@ -36,14 +38,14 @@ class EfDG1Dialog {
 
     _formatCountryCode(dg1.mrz.nationality).then((c) {
       if (_sheetSetter != null) {
-        _sheetSetter(() => _nationality = c);
+        _sheetSetter!(() => _nationality = c);
       } else {
         _nationality = c;
       }
     });
   }
 
-  Future<T> show<T>() {
+  Future<T?>? show<T>() {
     return _showBottomSheet();
   }
 
@@ -54,21 +56,21 @@ class EfDG1Dialog {
 
   Future<String> _formatCountryCode(String code) async {
     try {
-      Country c;
+      late Country c;
       if (code.length == 2) {
-        c = await _countryProvider.getCountryByCode2(
-            code2: Alpha2Code.valueOf(code));
+        c = await (_countryProvider.getCountryByCode2(
+            code2: Alpha2Code.valueOf(code)) as FutureOr<Country>);
       } else {
-        c = await _countryProvider.getCountryByCode3(
-            code3: Alpha3Code.valueOf(code));
+        c = await (_countryProvider.getCountryByCode3(
+            code3: Alpha3Code.valueOf(code)) as FutureOr<Country>);
       }
-      return c.name;
+      return c.name!;
     } catch (_) {
       return code;
     }
   }
 
-  Future<T> _showBottomSheet<T>() {
+  Future<T?>? _showBottomSheet<T>() {
     if (_sheetSetter != null) {
       return null;
     }
@@ -229,7 +231,7 @@ class EfDG1Dialog {
                   direction: Axis.horizontal,
                   runSpacing: 10,
                   spacing: 10,
-                  children: <Widget>[...actions])
+                  children: <Widget>[...actions!])
             ])));
   }
 }

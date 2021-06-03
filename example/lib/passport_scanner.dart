@@ -1,5 +1,7 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:dmrtd/dmrtd.dart';
@@ -24,14 +26,14 @@ class PassportScannerError implements Exception {
 class PassportScanner {
   final _log = Logger('passport.scanner');
   final _nfc = NfcProvider();
- NfcScanDialog _scanDialog;
+ late NfcScanDialog _scanDialog;
 
   AuthnAction action;
   final BuildContext context;
-  ProtoChallenge challenge;
+  ProtoChallenge? challenge;
 
   PassportScanner(
-      {@required this.context, this.challenge, @required this.action}) {
+      {required this.context, this.challenge, required this.action}) {
         _scanDialog = NfcScanDialog(context, onCancel: () async {
           _log.info('Scanning canceled by user');
           await _cancel();
@@ -56,7 +58,7 @@ class PassportScanner {
       throw PassportScannerError('challenge is null');
     }
 
-    String errorMsg;
+    String? errorMsg;
     try {
       _log.debug('Waiting for passport ...');
       await _connect(alertMessage: 'Hold your device near Biometric Passport');
@@ -67,8 +69,8 @@ class PassportScanner {
       await _call(() => passport.startSession(dbaKeys));
 
       _setAlertMessage(formatProgressMsg('Reading data ...', 0));
-      final efcom = await _call(() => passport.readEfCOM());
-      _log.debug('EF.COM version: ${efcom.version}');
+      final efcom = await _call<EfCOM>(() => passport.readEfCOM());
+      _log.debug('EF.COM version: ${efcom!.version}');
 
       _log.debug('Available data groups: ${formatDgTagSet(efcom.dgTags)}');
       if (!efcom.dgTags.containsAll([EfDG1.TAG, EfDG15.TAG])) {
@@ -80,15 +82,15 @@ class PassportScanner {
       }
 
       _setAlertMessage(formatProgressMsg('Reading data ...', 20));
-      EfDG1 dg1;
+      EfDG1? dg1;
       if (action == AuthnAction.login) {
         dg1 = await _call(() => passport.readEfDG1());
       }
 
       _setAlertMessage(formatProgressMsg('Reading data ...', 40));
       final dg15 = await _call(() => passport.readEfDG15());
-      EfDG14 dg14;
-      _log.debug('Passport AA public key type: ${dg15.aaPublicKey.type}');
+      EfDG14? dg14;
+      _log.debug('Passport AA public key type: ${dg15!.aaPublicKey.type}');
       if (dg15.aaPublicKey.type == AAPublicKeyType.EC) {
         if (!efcom.dgTags.contains(EfDG14.TAG)) {
           errorMsg = 'Unsupported passport';
@@ -108,10 +110,10 @@ class PassportScanner {
       _log.debug('Signing challenge ...');
       _setAlertMessage(formatProgressMsg('Signing challenge ...', 80));
       final csig = ChallengeSignature();
-      for (final c in challenge.getChunks(Passport.aaChallengeLen)) {
+      for (final c in challenge!.getChunks(Passport.aaChallengeLen)) {
         _log.verbose('Signing challenge chunk: ${c.hex()}');
         final sig = await _call(() => passport.activeAuthenticate(c));
-        _log.verbose("  Chunk's signature: ${sig.hex()}");
+        _log.verbose("  Chunk's signature: ${sig!.hex()}");
         csig.addSignature(sig);
       }
 
@@ -139,7 +141,7 @@ class PassportScanner {
 
       if (se.contains('timeout')) {
         errorMsg = 'Timeout while waiting for Passport tag!';
-      } else if (se.contains('tag was lost') || 
+      } else if (se.contains('tag was lost') ||
                  se.contains('tag connection lost')) {
         errorMsg = 'Tag was lost. Please try again!';
       } else if (se.contains('invalidated by user')) {
@@ -157,25 +159,25 @@ class PassportScanner {
   }
 
   /// Cancels current scanning operation
-  Future<dynamic> _cancel() {
+  Future<dynamic>? _cancel() {
     return _operation?.cancel();
   }
 
-  CancelableOperation _operation;
+  CancelableOperation? _operation;
 
   /// Invokes [f] via cancelable [_operation].
   /// If operation is canceled a [PassportScannerError] is thrown.
   /// On iOS, the cancellation here should never happen
   /// because it is processed through it's internal NFC framework.
-  Future<T> _call<T>(Future<T> Function() f) async {
-    T result;
+  Future<T?> _call<T>(Future<T> Function() f) async {
+    T? result;
     // Check if previous operation was canceled
     // and if not, invoke function f
     if (!(_operation?.isCanceled ?? false)) {
       _operation = CancelableOperation.fromFuture(f());
-      result = await _operation.valueOrCancellation(null);
+      result = await _operation!.valueOrCancellation(null);
     }
-    if (_operation.isCanceled) {
+    if (_operation!.isCanceled) {
       // Note that if current canceled _operation was
       // waiting for NFC job to finish, the NFC job itself was not canceled
       // and it will throw an exception which won't be handled.
@@ -196,14 +198,14 @@ class PassportScanner {
     ]);
   }
 
-  Future<void> _connect({String alertMessage}) {
+  Future<void> _connect({String? alertMessage}) {
     if (!Platform.isIOS) { // on iOS it's NFC framework handles displaying a NFC scan dialog
       _scanDialog.show(message: alertMessage);
     }
     return _call(() =>_nfc.connect(iosAlertMessage: alertMessage));
   }
 
-   Future<void> _disconnect({String alertMessage, String errorMessage}) {
+   Future<void> _disconnect({String? alertMessage, String? errorMessage}) {
     if (!Platform.isIOS) {
       return _scanDialog.hide(
           message: alertMessage,

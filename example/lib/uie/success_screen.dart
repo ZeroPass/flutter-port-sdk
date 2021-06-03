@@ -10,7 +10,7 @@ import 'authn_screen.dart';
 
 class SuccessScreen extends StatelessWidget {
   final AuthnAction action;
-  final UserId uid;
+  final UserId? uid;
   final String serverMsg;
 
   final _successCheck =

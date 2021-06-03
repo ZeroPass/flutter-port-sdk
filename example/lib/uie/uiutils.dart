@@ -7,8 +7,8 @@ import 'package:pedantic/pedantic.dart';
 import 'load_indicator.dart';
 import 'settings_screen.dart';
 
-String formatDate(DateTime date, {Locale locale}) {
-  String strDate;
+String formatDate(DateTime date, {Locale? locale}) {
+  late String strDate;
   if (date != null) {
     strDate = DateFormat.yMd(locale?.languageCode).format(date);
   }
@@ -16,17 +16,17 @@ String formatDate(DateTime date, {Locale locale}) {
 }
 
 /// Returns [Locale] or null.
-Locale getLocaleOf(BuildContext ctx) {
+Locale? getLocaleOf(BuildContext ctx) {
   return Localizations.maybeLocaleOf(ctx);
 }
 
 Container makeButton(
-    {@required BuildContext context,
-    @required String text,
+    {required BuildContext context,
+    required String text,
     bool disabled = false,
     bool visible = true,
-    Function onPressed,
-    Color color,
+    Function? onPressed,
+    Color? color,
     padding = const EdgeInsets.all(20.0),
     margin = const EdgeInsets.only(left: 30.0, right: 30.0)}) {
   return !visible
@@ -48,13 +48,13 @@ Container makeButton(
                       text,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    onPressed: disabled ? null : onPressed))
+                    onPressed: disabled ? null : onPressed as void Function()?))
           ]));
 }
 
-Future<T> showAlert<T>(BuildContext context, Widget title, Widget content,
+Future<T?> showAlert<T>(BuildContext context, Widget title, Widget content,
     List<FlatButton> actions,
-    {GlobalKey key, dismissible = false}) async {
+    {GlobalKey? key, dismissible = false}) async {
   return showDialog<T>(
     context: context,
     barrierDismissible: dismissible,
@@ -106,13 +106,13 @@ Future<void> showBusyDialog(BuildContext context, GlobalKey key,
 Future<void> hideBusyDialog(GlobalKey dialogKey,
     {Duration syncWait = const Duration(milliseconds: 200)}) async {
   if (dialogKey.currentContext != null) {
-    Navigator.of(dialogKey.currentContext, rootNavigator: true).pop();
+    Navigator.of(dialogKey.currentContext!, rootNavigator: true).pop();
     // sync
     await Future.delayed(syncWait);
   }
 }
 
-Future<DateTime> pickDate(BuildContext context, DateTime firstDate,
+Future<DateTime?> pickDate(BuildContext context, DateTime firstDate,
     DateTime initDate, DateTime lastDate) async {
   final locale = Localizations.maybeLocaleOf(context);
   final picked = await showDatePicker(
@@ -125,7 +125,7 @@ Future<DateTime> pickDate(BuildContext context, DateTime firstDate,
 }
 
 IconButton settingsButton(BuildContext context,
-    {final iconSize = 24.0, Future<void> Function() onWillPop}) {
+    {final iconSize = 24.0, Future<void> Function()? onWillPop}) {
   return IconButton(
     icon: Icon(Icons.settings, color: Theme.of(context).primaryColor),
     iconSize: iconSize,

@@ -13,14 +13,14 @@ class Preferences {
   static const String _timeout = 'timeout';
   static const String _dbakeys = 'dbaKeys';
 
-  static SharedPreferences _prefs;
+  static SharedPreferences? _prefs;
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
-  static DBAKeys getDBAKeys() {
-    final data = _prefs.getString(_dbakeys);
+  static DBAKeys? getDBAKeys() {
+    final data = _prefs!.getString(_dbakeys);
     if(data == null) {
       return null;
     }
@@ -38,11 +38,11 @@ class Preferences {
       'dob'      : keys.dateOfBirth.formatYYMMDD(),
       'doe'      : keys.dateOfExpiry.formatYYMMDD()
     });
-    return _prefs.setString(_dbakeys, data);
+    return _prefs!.setString(_dbakeys, data);
   }
 
   static Uri getServerUrl()  {
-    final url = _prefs.getString(_srvUrl);
+    final url = _prefs!.getString(_srvUrl);
     if(url != null) {
       return Uri.parse(url);
     }
@@ -50,14 +50,14 @@ class Preferences {
   }
 
   static Future<bool> setServerUrl(Uri url) async {
-    return _prefs.setString(_srvUrl, url.toString());
+    return _prefs!.setString(_srvUrl, url.toString());
   }
 
   static Duration getConnectionTimeout() {
-    return Duration(seconds: _prefs.getInt(_timeout) ?? defaultTimeout.inSeconds);
+    return Duration(seconds: _prefs!.getInt(_timeout) ?? defaultTimeout.inSeconds);
   }
 
   static Future<bool> setConnectionTimeout(Duration timeout) async {
-    return _prefs.setInt(_timeout, timeout.inSeconds);
+    return _prefs!.setInt(_timeout, timeout.inSeconds);
   }
 }

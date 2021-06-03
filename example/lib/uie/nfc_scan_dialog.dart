@@ -19,15 +19,15 @@ class NfcScanDialog {
   /// Constructs new [NfcScanDialog] using [context] and optionally
   /// [onCancel] callback which is called when user presses cancel button.
   /// If callback [onCancel] is not provided or null the cancel button will be hidden.
-  NfcScanDialog(this.context, {Function() onCancel}) : _onCancelCB = onCancel {
+  NfcScanDialog(this.context, {Function()? onCancel}) : _onCancelCB = onCancel {
     _showCancelButton = _onCancelCB != null;
   }
 
   /// Shows bottom dialog with optionally [message] string.
-  Future<T> show<T>({String message}) {
-    return _showBottomSheet<T>(message).then((value) async {
+  Future<T?> show<T>({String? message}) {
+    return _showBottomSheet<T>(message)!.then((value) async {
       if (_closingOperation != null) {
-        await _closingOperation.cancel();
+        await _closingOperation!.cancel();
         _closingOperation = null;
       }
       else if (_sheetSetter != null) {
@@ -43,8 +43,8 @@ class NfcScanDialog {
   /// If [message] or [errorMessage] is provided closing dialog will be delayed for [delayClosing] period.
   /// If both [message] and [errorMessage] are set the [errorMessage] will be used.
   Future<void> hide(
-      {String message,
-      String errorMessage,
+      {String? message,
+      String? errorMessage,
       Duration delayClosing = const Duration(milliseconds: 2500)}) {
     return _closeBottomSheet(
         message: message,
@@ -52,26 +52,26 @@ class NfcScanDialog {
         delayClosing: delayClosing);
   }
 
-  String _msg;
+  String _msg = '';
   String _iconAnimation = _IconAnimations.animWaiting;
-  StateSetter _sheetSetter;
+  StateSetter? _sheetSetter;
 
-  CancelableOperation _closingOperation;
-  final Function _onCancelCB;
-  bool _showCancelButton;
+  CancelableOperation? _closingOperation;
+  final Function? _onCancelCB;
+  late bool _showCancelButton;
 
   void _setMessage(final String msg) {
     if (_sheetSetter != null) {
-      _sheetSetter(() {
+      _sheetSetter!(() {
         _iconAnimation = _IconAnimations.animScanning;
-        _msg = msg ?? '';
+        _msg = msg;
       });
     } else {
-      _msg = msg ?? '';
+      _msg = msg;
     }
   }
 
-  Future<T> _showBottomSheet<T>(String msg) {
+  Future<T?>? _showBottomSheet<T>(String? msg) {
     if (_sheetSetter != null) {
       return null;
     }
@@ -139,15 +139,15 @@ class NfcScanDialog {
   }
 
   Future<void> _closeBottomSheet(
-      {String message, String errorMessage, Duration delayClosing}) {
+      {String? message, String? errorMessage, Duration? delayClosing}) {
     if (_sheetSetter != null) {
       if(_closingOperation != null) {
-        _closingOperation.cancel();
+        _closingOperation!.cancel();
         _closingOperation = null;
       }
 
       if ((message != null || errorMessage != null)) {
-        _sheetSetter(() {
+        _sheetSetter!(() {
           _showCancelButton = false;
           if (errorMessage != null) {
             _msg = errorMessage;
@@ -168,7 +168,7 @@ class NfcScanDialog {
               Navigator.pop(context);
             }
           });
-          return _closingOperation.valueOrCancellation();
+          return _closingOperation!.valueOrCancellation();
         }
       }
       _sheetSetter = null;
@@ -180,7 +180,7 @@ class NfcScanDialog {
   Future<void> _onCancel() async {
     await _closeBottomSheet();
     if (_onCancelCB != null) {
-      return await _onCancelCB();
+      return await _onCancelCB!();
     }
   }
 }

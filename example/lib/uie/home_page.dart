@@ -70,7 +70,7 @@ Widget HomePage(
                       borderRadius: BorderRadius.circular(30.0)),
                   color: Colors.redAccent,
                   highlightedBorderColor: Theme.of(context).primaryColor,
-                  onPressed: onSignupPressed,
+                  onPressed: onSignupPressed as void Function()?,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 20.0,
@@ -107,7 +107,7 @@ Widget HomePage(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0)),
                   color: Theme.of(context).primaryColor,
-                  onPressed: onLoginPressed,
+                  onPressed: onLoginPressed as void Function()?,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 20.0,
