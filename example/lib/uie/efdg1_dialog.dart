@@ -197,13 +197,13 @@ class EfDG1Dialog {
                                 ]),
                                 Row(children: <Widget>[
                                   Expanded(
-                                      child: Text('Sex:',
+                                      child: Text('Gender:',
                                           style: TextStyle(fontSize: 16))),
                                   Expanded(
                                     child: Text(
-                                        dg1.mrz.sex.isEmpty
+                                        dg1.mrz.gender.isEmpty
                                             ? '/'
-                                            : dg1.mrz.sex == 'M'
+                                            : dg1.mrz.gender == 'M'
                                                 ? 'Male'
                                                 : 'Female',
                                         style: TextStyle(fontSize: 16)),
