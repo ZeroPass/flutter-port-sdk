@@ -22,34 +22,48 @@ class CID {
   }
 
   Map<String, dynamic> toJson() {
-    return {_serKey: value.hex()};
+    return {_serKey: toString()};
   }
 
   int toInt() {
     return ByteData.view(value.buffer).getUint32(0, Endian.big);
   }
+
+  @override
+  String toString() => value.hex();
 }
 
 class ProtoChallenge {
-  static const _serKey = 'challenge';
+  static const _serKeyChallenge = 'challenge';
+  static const _serKeyExpires   = 'expires';
+
   final Uint8List data;
+  final DateTime expires;
+
 
   CID get id {
     return CID(data.sublist(0, 4));
   }
 
-  ProtoChallenge(this.data) {
+  ProtoChallenge(this.data, this.expires) {
     if (data.length != 32) {
       throw ArgumentError.value(data, '', 'Invalid raw challenge bytes length');
     }
   }
 
   factory ProtoChallenge.fromJson(Map<String, dynamic> json) {
-    if (!json.containsKey(_serKey)) {
+    if (!json.containsKey(_serKeyChallenge)) {
       throw ArgumentError.value(json, 'json',
-          "Can't construct ProtoChallenge from JSON, no key '$_serKey' in argument");
+          "Can't construct ProtoChallenge from JSON, no key '$_serKeyChallenge' in argument");
     }
-    return ProtoChallenge((json[_serKey] as String).parseBase64());
+    else if (!json.containsKey(_serKeyExpires)) {
+      throw ArgumentError.value(json, 'json',
+          "Can't construct ProtoChallenge from JSON, no key '$_serKeyExpires' in argument");
+    }
+
+    final c = (json[_serKeyChallenge] as String).parseBase64();
+    final e = json[_serKeyExpires] as int;
+    return ProtoChallenge(c, DateTime.fromMillisecondsSinceEpoch(e * 1000));
   }
 
   /// Returns list of [chunkSize] big chunks of challenge bytes.
@@ -67,6 +81,9 @@ class ProtoChallenge {
   }
 
   Map<String, dynamic> toJson() {
-    return {_serKey: data.base64()};
+    return {
+      _serKeyChallenge: data.base64(),
+       _serKeyExpires: (expires.millisecondsSinceEpoch * 0.001).toInt()
+    };
   }
 }

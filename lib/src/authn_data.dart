@@ -2,13 +2,11 @@
 import 'package:dmrtd/dmrtd.dart';
 import 'proto/challenge_signature.dart';
 
-/// Class holds data needed for Port authentication.
-/// e.g.: used at registration and login.
-class AuthnData  {
-  final EfSOD? sod;
-  final EfDG1? dg1;
+/// Class holds biometric passport data needed for Port registration.
+class RegistrationAuthnData {
+  final EfSOD sod;
   final EfDG14? dg14;
   final EfDG15 dg15;
   final ChallengeSignature csig;
-  AuthnData({ required this.dg15, required this.csig, this.sod, this.dg1, this.dg14});
+  RegistrationAuthnData({required this.sod, this.dg14, required this.dg15, required this.csig});
 }

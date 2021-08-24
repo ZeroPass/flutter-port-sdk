@@ -1,33 +1,30 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
+import 'dart:convert';
 import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
+import 'package:port/src/proto/challenge_signature.dart';
 import 'package:port/src/proto/uid.dart';
 
 import 'authn_data.dart';
 import 'proto/port_api.dart';
 import 'proto/port_error.dart';
 import 'proto/proto_challenge.dart';
-import 'proto/session.dart';
-
 
 class PortClient {
 
   final _log = Logger('port.client');
   final PortApi _api;
-  ProtoChallenge? _challenge;
-  Session? _session;
+  final _challenges = <UserId, ProtoChallenge>{};
+  var _tint = Duration(minutes: 5); // tidy-up interval
+  var _ttime = DateTime.now(); // last tidy-up time
+
   Future<bool> Function(SocketException e)? _onConnectionError;
-  Future<bool> Function(EfDG1 dg1)? _onDG1FileRequest;
 
   /// Returns connection timeout.
   Duration? get timeout => _api.timeout;
   set timeout(Duration? timeout) => _api.timeout = timeout;
-
-  /// Returns [UserId] or [null]
-  /// if session is not established yet.
-  UserId? get uid => _session?.uid;
 
   /// Returns server [Uri] url.
   Uri get url => _api.url;
@@ -44,109 +41,111 @@ class PortClient {
   set onConnectionError(Future<bool> Function(SocketException e) callback) =>
     _onConnectionError = callback;
 
-  /// Callback invoked when signing up via login method and
-  /// server requested DG1 file (data from MRZ) in order to establish login session.
-  /// If [callback] returns true the EfDG1 file will be send to the server.
-  set onDG1FileRequested(Future<bool> Function(EfDG1 dg1) callback) =>
-    _onDG1FileRequest = callback;
-
-  /// Notifies server to dispose session
-  /// establishment challenge used for register/login.
-  void disposeChallenge() {
-    if(_challenge != null) {
-       _api.cancelChallenge(_challenge!);
-      _resetChallenge();
+  /// Notifies server to dispose challenge used for register/getAssertion.
+  void disposeChallenge(UserId uid) {
+    final c = _challenges[uid];
+    if (c != null) {
+      _log.debug('Disposing challenge. uid=$uid cid=${c.id}');
+      _api.cancelChallenge(c);
+      _challenges.remove(uid);
     }
   }
 
-  /// Establishes session by calling Port login API using [AuthnData] returned via [callback].
-  /// [AuthnData] should have assigned fields: [csig], [sod] and [dg1] in case server request it.
-  /// If argument [sendEfDG1] is true then file EfDG1 will be sent to server in any case without
-  /// server requesting it first.
+  /// Request authn assertion for eMRTD active authentication by calling Port `get_assertion`
+  /// for [uid] using passport [ChallengeSignature] returned via [callback] as authentication credential.
+  /// Note, the [uid] should be already registered with Port server before calling this method.
   ///
-  /// Note: If login fails due to server requested EF.DG1 file this request
-  ///       is handled via callback [onDG1FileRequested]. If not [PortError] is thrown.
+  /// Returns server specific user authn assertion result in JSON format.
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
-  /// Throws [PortError] when required data returned by [callback] is missing or
-  /// when provided data is invalid e.g. verification of challenge signature fails.
-  Future<void> login(Future<AuthnData> Function(ProtoChallenge challenge) callback, {bool sendEfDG1 = false}) async {
-    _log.verbose('::login');
-    await _retriableCall(_getNewChallenge);
+  /// Throws [PortError] when [callback] returns empty list of `csigs`, or
+  /// server error e.g. [uid] not registered or invalid signatures in `csigs` fo challenge.
+  Future<Map<String, dynamic>> getAssertion(UserId uid, Future<ChallengeSignature> Function(ProtoChallenge challenge) callback) async {
+    _log.verbose('::getAssertion: uid=$uid');
+    final challenge = await _retriableCall(()=>_fetchChallenge(uid));
 
-     _log.verbose('Invoking callback with recieved challenge');
-    final data = await callback(_challenge!);
-    _throwIfMissingRequiredAuthnData(data);
+    _log.verbose('Invoking callback with received challenge, cid=${challenge.id}');
+    final csig   = await callback(challenge);
+    if(csig.isEmpty){
+        _log.error('Callback returned empty `csigs`.');
+        throw PortError(-32602, 'Missing required eMRTD authentication data');
+    }
 
-    final uid = UserId.fromDG15(data.dg15);
-    _session = await _retriableCallEx((error) async {
+    final result = await _retriableCallEx((error) async {
       if(error != null) {
-        // Handle request for EfDG1 file
-        if(!error.isDG1Required() || data.dg1 == null ||
-           !(await _onDG1FileRequest?.call(data.dg1!) ?? false)) {
-          throw _RethrowPortError(error);
-        }
-        sendEfDG1 = true;
+        _log.error('An error has occurred while requesting assertion from server. uid=$uid');
+        _log.error('  e=$error');
+        throw _RethrowPortError(error);
       }
-      final dg1 = sendEfDG1 ? data.dg1 : null;
-      return _api.login(uid, _challenge!.id, data.csig, dg1: dg1);
+      return _api.getAssertion(uid, challenge.id, csig);
     });
 
-    _resetChallenge();
+    _log.debug('Retrieved assertion from server for uid=$uid:');
+    _log.debug(jsonEncode(result));
+    _challenges.remove(uid);
+    return result;
   }
 
   /// Calls pasID ping API with [number] and returns [pong] number.
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
   Future<int> ping(int number) async {
     _log.verbose('Pinging server with: $number');
-    return _api.ping(number);
+    return await _retriableCall(() => _api.ping(number));
   }
 
-  /// Establishes session by calling Port register API using [AuthnData] returned via [callback].
-  /// [AuthnData] should have assigned fields: [dg15], [csig], [sod] and
-  /// [dg14] if AA public key in [dg15] is of type [EC].
+  /// Registers new Port biometric passport attestation for [uid] using [RegistrationAuthnData] returned via [callback] as attestation data.
+  /// The [RegistrationAuthnData] should have assigned fields [dg14] if AA public key in [dg15] is of type [EC].
+  ///
+  /// Returns server specific user registration result in JSON format.
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
   /// Throws [PortError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
-  Future<void> register(Future<AuthnData> Function(ProtoChallenge challenge) callback) async {
-    _log.verbose('::register');
-    await _retriableCall(_getNewChallenge);
+  Future<Map<String, dynamic>> register(UserId uid, Future<RegistrationAuthnData> Function(ProtoChallenge challenge) callback) async {
+    _log.verbose('::register: uid=$uid');
+    final challenge = await _retriableCall(()=>_fetchChallenge(uid));
 
-    _log.verbose('Invoking callback with recieved challenge');
-    final data = await callback(_challenge!);
-    _throwIfMissingRequiredAuthnData(data);
-    if(data.sod == null) {
-      throw throw PortError(-32602, 'Missing proto data to establish session');
+    _log.verbose('Invoking callback with received challenge, cid=${challenge.id}');
+    final data = await callback(challenge);
+    if(  data.sod.toBytes().isEmpty
+      || data.csig.isEmpty
+      || (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null)){
+        _log.error('Callback returned authn data which is missing required attestation files and data for registration.');
+        throw PortError(-32602, 'Missing required eMRTD attestation data for registration');
     }
 
-    _session = await _retriableCall(() =>
-      _api.register(data.sod!, data.dg15, _challenge!.id, data.csig, dg14: data.dg14)
-    );
+    final result = await _retriableCallEx((error) async {
+      if(error != null) {
+        _log.error('An error has occurred while registering attestation for user with uid=$uid');
+        _log.error('  e=$error');
+        throw _RethrowPortError(error);
+      }
+      return _api.register(uid, data.sod, data.dg15, challenge.id, data.csig, dg14: data.dg14);
+    });
 
-    _resetChallenge();
+    _challenges.remove(uid);
+    return result;
   }
 
-  /// Calls Port sayHello API and returns greeting from server.
-  /// Session must be established prior calling this function via
-  /// either [register] or [login] method.
-  ///
-  /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
-  /// Throws [PortError] if session is not set or
-  /// invalid session parameters.
-  Future<String> requestGreeting() {
-    _log.verbose('::requestGreeting');
-    if(_session == null) {
-      throw PortError(-32602, 'Session not established');
+  Future<ProtoChallenge> _fetchChallenge(UserId uid) async {
+    final t = DateTime.now();
+    // if tidy-up time, remove any expired challenge
+    if (_ttime.isBefore(t.subtract(_tint))) {
+      _challenges.keys
+      .where((k) => _challenges[k]!.expires.compareTo(t) <= 0)
+      .toList()
+      .forEach(_challenges.remove);
+      _ttime = t;
     }
-    return _retriableCall(() =>
-      _api.sayHello(_session!)
-    );
-  }
 
-  Future<void> _getNewChallenge() async {
-    _challenge = await _api.getChallenge();
-    _log.debug('Received new challenge: ${_challenge.toString()}');
+    var c = _challenges[uid];
+    if (c == null || c.expires.compareTo(t) <= 0) {
+      _log.debug('Requesting new challenge for uid=$uid');
+      c = await _api.getChallenge(uid);
+      _log.debug('Received challenge for uid=$uid: ${c.data.hex()}');
+      _challenges[uid] = c;
+    }
+    return c;
   }
 
   /// Function recursively calls [func] in case of a handled exception until result is returned.
@@ -178,19 +177,6 @@ class PortClient {
       }
       return func();
     });
-  }
-
-  void _resetChallenge() {
-    _challenge = null;
-  }
-
-  /// Session data is data needed to establish Port proto session
-  /// e.g: dg15 (AA public key) and csig.
-  void _throwIfMissingRequiredAuthnData(final AuthnData data) {
-    if( (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null)
-      || data.csig.isEmpty){
-        throw PortError(-32602, 'Missing required authentication data to establish session');
-    }
   }
 }
 

@@ -1,22 +1,18 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
+import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pointycastle/digests/ripemd160.dart';
-import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 
 class UserId  {
   static const _serKey = 'uid';
+  static const _maxLen = 20;
   late final Uint8List _uid;
 
   UserId(final Uint8List rawUid) {
-    if(rawUid.length != RIPEMD160Digest().digestSize) {
+    if(rawUid.isEmpty || rawUid.length > _maxLen) {
       throw ArgumentError.value(rawUid, 'rawUid', 'Invalid length');
     }
     _uid = rawUid;
-  }
-
-  factory UserId.fromDG15(final EfDG15 dg15) {
-    return UserId(RIPEMD160Digest().process(dg15.aaPublicKey.toBytes()));
   }
 
   factory UserId.fromJson(final Map<String, dynamic> json) {
@@ -27,6 +23,12 @@ class UserId  {
     return UserId((json[_serKey] as String).parseBase64());
   }
 
+  /// Creates UserId from regular string.
+  /// Internally [uid] is UTF-8 encoded.
+  factory UserId.fromString(final String uid) {
+    return UserId(Uint8List.fromList(utf8.encode(uid)));
+  }
+
   Uint8List toBytes() => _uid;
 
   Map<String, dynamic> toJson() {
@@ -34,5 +36,12 @@ class UserId  {
   }
 
   @override
-  String toString() => _uid.hex();
+  String toString() {
+    try {
+      return utf8.decode(_uid, allowMalformed: false);
+    }
+    catch(_) {
+      return _uid.hex();
+    }
+  }
 }
