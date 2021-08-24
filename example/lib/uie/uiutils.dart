@@ -53,7 +53,7 @@ Container makeButton(
 }
 
 Future<T?> showAlert<T>(BuildContext context, Widget title, Widget content,
-    List<FlatButton> actions,
+    List<TextButton> actions,
     {GlobalKey? key, dismissible = false}) async {
   return showDialog<T>(
     context: context,

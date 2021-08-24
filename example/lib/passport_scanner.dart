@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
+import 'package:egport/uie/flat_btn_style.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -15,6 +16,16 @@ import 'uie/authn_screen.dart';
 import 'uie/nfc_scan_dialog.dart';
 import 'uie/uiutils.dart';
 import 'utils.dart';
+
+class PassportData  {
+  EfSOD? sod;
+  EfDG1? dg1;
+  EfDG2? dg2;
+  EfDG14? dg14;
+  EfDG15? dg15;
+  ChallengeSignature? csig;
+  PassportData({this.sod, this.dg1, this.dg2, this.dg14, this.dg15, this.csig});
+}
 
 class PassportScannerError implements Exception {
   final String message;
@@ -28,7 +39,7 @@ class PassportScanner {
   final _nfc = NfcProvider();
  late NfcScanDialog _scanDialog;
 
-  AuthnAction action;
+  PortAction action;
   final BuildContext context;
   ProtoChallenge? challenge;
 
@@ -45,7 +56,7 @@ class PassportScanner {
   /// displays sheet modal dialog informing the user on scanning progress.
   /// User can also cancel scanning of passport via dialog.
   ///
-  /// It returns [AuthnData] according to [action]:
+  /// It returns [PassportData] according to [action]:
   ///   - register: EfDG15, EfSOD, EfDG14 (Optionally if needed to verify sig)
   ///   - login: EfDG1, EfDG15, EfDG14 (Optionally if needed to verify sig)
   /// In any case the [ChallengeSignature] is returned.
@@ -53,7 +64,7 @@ class PassportScanner {
   /// On error [PassportScannerError] is thrown.
   /// Note: That any error, except for the user cancellation error is
   ///       displayed to the user via sheet dialog.
-  Future<AuthnData> scan(final DBAKeys dbaKeys) async {
+  Future<PassportData> scan(final DBAKeys dbaKeys) async {
     if (challenge == null) {
       throw PassportScannerError('challenge is null');
     }
@@ -73,52 +84,50 @@ class PassportScanner {
       _log.debug('EF.COM version: ${efcom!.version}');
 
       _log.debug('Available data groups: ${formatDgTagSet(efcom.dgTags)}');
-      if (!efcom.dgTags.containsAll([EfDG1.TAG, EfDG15.TAG])) {
-        _log.info('Unsupported passport - '
-            "missing file ${efcom.dgTags.contains(EfDG1.TAG) ? "Ef.DG15" : "EF.DG1"}");
+      if ((action == PortAction.register || action == PortAction.login)
+        && !efcom.dgTags.containsAll([EfDG15.TAG])) {
+        _log.info('Unsupported passport - "missing file Ef.DG15');
         errorMsg = 'Unsupported passport';
         await _showUnsupportedMrtdAlert();
         throw PassportScannerError('Unsupported passport');
       }
 
-      _setAlertMessage(formatProgressMsg('Reading data ...', 20));
-      EfDG1? dg1;
-      if (action == AuthnAction.login) {
-        dg1 = await _call(() => passport.readEfDG1());
-      }
-
-      _setAlertMessage(formatProgressMsg('Reading data ...', 40));
-      final dg15 = await _call(() => passport.readEfDG15());
-      EfDG14? dg14;
-      _log.debug('Passport AA public key type: ${dg15!.aaPublicKey.type}');
-      if (dg15.aaPublicKey.type == AAPublicKeyType.EC) {
-        if (!efcom.dgTags.contains(EfDG14.TAG)) {
-          errorMsg = 'Unsupported passport';
-          _log.warning(
-              'Strange ... passport should contain file EF.DG14 but is somehow missing?!');
-          await _showUnsupportedMrtdAlert(); // TODO: show more descriptive alert dialog
-          throw PassportScannerError('Unsupported passport');
+      final pdata = PassportData();
+      if (action == PortAction.register) {
+        // _setAlertMessage(formatProgressMsg('Reading data ...', 20));
+        // if (action == PortAction.login) {
+        //   pdata.dg1 = await _call(() => passport.readEfDG1());
+        // }
+        _setAlertMessage(formatProgressMsg('Reading data ...', 20));
+        pdata.dg15 = await _call(() => passport.readEfDG15());
+        _log.debug('Passport AA public key type: ${pdata.dg15!.aaPublicKey.type}');
+        if (pdata.dg15!.aaPublicKey.type == AAPublicKeyType.EC) {
+          if (!efcom.dgTags.contains(EfDG14.TAG)) {
+            errorMsg = 'Unsupported passport';
+            _log.warning(
+                'Strange ... passport should contain file EF.DG14 but is somehow missing?!');
+            await _showUnsupportedMrtdAlert(); // TODO: show more descriptive alert dialog
+            throw PassportScannerError('Unsupported passport');
+          }
+          pdata.dg14 = await _call(() => passport.readEfDG14());
         }
-        dg14 = await _call(() => passport.readEfDG14());
-      }
 
-      _setAlertMessage(formatProgressMsg('Reading data ...', 60));
-      final sod = action == AuthnAction.register
-          ? await _call(() => passport.readEfSOD())
-          : null;
+        _setAlertMessage(formatProgressMsg('Reading data ...', 60));
+        pdata.sod = await _call(() => passport.readEfSOD());
+      }
 
       _log.debug('Signing challenge ...');
       _setAlertMessage(formatProgressMsg('Signing challenge ...', 80));
-      final csig = ChallengeSignature();
+      pdata.csig = ChallengeSignature();
       for (final c in challenge!.getChunks(Passport.aaChallengeLen)) {
         _log.verbose('Signing challenge chunk: ${c.hex()}');
         final sig = await _call(() => passport.activeAuthenticate(c));
         _log.verbose("  Chunk's signature: ${sig!.hex()}");
-        csig.addSignature(sig);
+        pdata.csig!.addSignature(sig);
       }
 
       _log.debug('Scanning passport completed');
-      return AuthnData(sod: sod, dg1: dg1, dg14: dg14, dg15: dg15, csig: csig);
+      return pdata;
     } on PassportScannerError {
       rethrow;
     } catch (e) {
@@ -189,7 +198,8 @@ class PassportScanner {
   Future<void> _showUnsupportedMrtdAlert() async {
     await showAlert(context, Text('Unsupported Passport'),
         Text('This passport is not supported!'), [
-      FlatButton(
+      TextButton(
+          style: flatButtonStyle,
           onPressed: () => Navigator.pop(context),
           child: const Text(
             'CLOSE',

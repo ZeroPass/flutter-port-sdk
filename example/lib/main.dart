@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:dmrtd/dmrtd.dart';
+import 'package:egport/uie/flat_btn_style.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -85,7 +86,7 @@ class _EgPortWidgetState extends State<EgPortWidget>
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (context) => AuthnScreen(AuthnAction.login),
+        builder: (context) => AuthnScreen(PortAction.login),
       ),
     );
   }
@@ -94,7 +95,7 @@ class _EgPortWidgetState extends State<EgPortWidget>
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (context) => AuthnScreen(AuthnAction.register),
+        builder: (context) => AuthnScreen(PortAction.register),
       ),
     );
   }
@@ -109,18 +110,19 @@ class _EgPortWidgetState extends State<EgPortWidget>
             Text(
                 "This device doesn't support NFC.\nNFC is required to use this app."),
             [
-              FlatButton(
-                  onPressed: () {
-                    if (Platform.isIOS) {
-                      exit(0);
-                    } else {
-                      SystemNavigator.pop(animated: true);
-                    }
-                  },
-                  child: Text('EXIT',
-                      style: TextStyle(
-                          color: Theme.of(context).errorColor,
-                          fontWeight: FontWeight.bold)))
+              TextButton(
+                style: flatButtonStyle,
+                onPressed: () {
+                  if (Platform.isIOS) {
+                    exit(0);
+                  } else {
+                    SystemNavigator.pop(animated: true);
+                  }
+                },
+                child: Text('EXIT',
+                    style: TextStyle(
+                        color: Theme.of(context).errorColor,
+                        fontWeight: FontWeight.bold)))
             ]);
       }
     });

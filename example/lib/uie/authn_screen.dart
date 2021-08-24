@@ -1,6 +1,8 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:connectivity/connectivity.dart';
 import 'package:dmrtd/dmrtd.dart';
@@ -19,14 +21,14 @@ import '../preferences.dart';
 import '../srv_sec_ctx.dart';
 import '../utils.dart';
 import 'efdg1_dialog.dart';
+import 'flat_btn_style.dart';
 import 'success_screen.dart';
 import 'uiutils.dart';
 
-
-enum AuthnAction { register, login }
+enum PortAction { register, login }
 
 class AuthnScreen extends StatefulWidget {
-  final AuthnAction _action;
+  final PortAction _action;
   AuthnScreen(this._action, {Key? key}) : super(key: key);
   _AuthnScreenState createState() => _AuthnScreenState(_action);
 }
@@ -36,9 +38,9 @@ class _AuthnScreenState extends State<AuthnScreen>
     with WidgetsBindingObserver {
   _AuthnScreenState(this._action);
 
-  final AuthnAction _action;
+  final PortAction _action;
   final _log = Logger('action.screen');
-  PortClient? _client;
+  PortClient? _port;
 
   var _isNfcAvailable = false;
   var _isScanningMrtd = false;
@@ -48,12 +50,9 @@ class _AuthnScreenState extends State<AuthnScreen>
   final GlobalKey<State> _keyBusyIndicator =
       GlobalKey<State>(debugLabel: 'key_action_screen_busy_indicator');
 
-  // Data needed for Port protocol
-  ProtoChallenge? _challenge;
-  final _authnData = Completer<AuthnData>();
-
   // mrz data
   final _mrzData = GlobalKey<FormState>();
+  final _username = TextEditingController();
   final _docNumber = TextEditingController();
   final _dob = TextEditingController(); // date of birth
   final _doe = TextEditingController(); // date of doc expiry
@@ -77,80 +76,18 @@ class _AuthnScreenState extends State<AuthnScreen>
             return;
           }
         }
-        _showBusyIndicator().then((value) async {
+
+        unawaited(_showBusyIndicator().then((value) async {
           try {
             // Init PortClient
-            _client = PortClient(Preferences.getServerUrl(), httpClient: httpClient);
-            _client!.onConnectionError  = _handleConnectionError;
-            _client!.onDG1FileRequested = _handleDG1Request;
-
-            // Execute authn action on Port client
-            switch(_action) {
-              case AuthnAction.register:
-                await _client!.register((challenge) async {
-                  _hideBusyIndicator();
-                  return _getAuthnData(challenge).then((data) {
-                    _showBusyIndicator(msg: 'Signing up ...');
-                     return data;
-                  });
-                });
-                break;
-              case AuthnAction.login:
-              await _client!.login((challenge) async {
-                  _hideBusyIndicator();
-                  return _getAuthnData(challenge).then((data) {
-                    _showBusyIndicator(msg: 'Logging in ...');
-                     return data;
-                  });
-              });
-              break;
-            }
-
-            // Request greeting from server and on successful
-            // response show SuccessScreen
-            final srvMsg = await _client!.requestGreeting();
-            await _hideBusyIndicator(syncWait: Duration(seconds: 0));
-            Navigator.pushReplacement(
-              context, CupertinoPageRoute(
-                builder: (context) => SuccessScreen(_action, _client!.uid, srvMsg),
-            ));
-          }
-          catch(e) {
+            _port = PortClient(Preferences.getServerUrl(), httpClient: httpClient);
+            _port!.onConnectionError  = _handleConnectionError;
+            await _port!.ping(Random().nextInt(0xffffffff));
+            unawaited(_hideBusyIndicator());
+          } catch(e) {
             String? alertTitle;
             String? alertMsg;
             if (e is SocketException) {} // should be already handled through _handleConnectionError callback
-            else if(e is PortError) {
-              if(!e.isDG1Required()) { // DG1 required error should be handled through _handleDG1Request callback
-                _log.error('An unhandled Port exception, closing this screen.\n error=$e');
-                alertTitle = 'Port Error';
-                switch(e.code){
-                  case 401: alertMsg = 'Authorization failed!'; break;
-                  //case 404: // TODO: parse message and translate it to system language
-                  case 406: {
-                    alertMsg = 'Passport verification failed!';
-                    final msg = e.message.toLowerCase();
-                    if(msg.contains('invalid dg1 file')) {
-                      alertMsg = 'Server refused to accept sent personal data!';
-                    }
-                    else if(msg.contains('invalid dg15 file')) {
-                      alertMsg = "Server refused to accept passport's public key!";
-                    }
-                  } break;
-                  case 409: alertMsg = 'Account already exists!'; break;
-                  case 412: alertMsg = 'Passport trust chain verification failed!'; break;
-                  case 498: {
-                    final msg = e.message.toLowerCase();
-                    if(msg.contains('account has expired')) {
-                      alertMsg = 'Account has expired, please register again!';
-                      break;
-                    }
-                  } continue dflt;
-                  dflt:
-                  default:
-                  alertMsg = 'Server returned error:\n\n${e.message}';
-                }
-              }
-            }
             else {
               _log.error('An unhandled exception was encountered, closing this screen.\n error=$e');
               alertTitle = 'Error';
@@ -162,7 +99,8 @@ class _AuthnScreenState extends State<AuthnScreen>
             // Show alert dialog
             if(alertMsg != null && alertTitle != null) {
               await showAlert(context, Text(alertTitle), Text(alertMsg), [
-                FlatButton(
+                TextButton(
+                  style: flatButtonStyle,
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'MAIN MENU',
@@ -176,14 +114,21 @@ class _AuthnScreenState extends State<AuthnScreen>
             // Return to main menu
             _goToMain();
           }
-        });
+        }));
      });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance!.removeObserver(this);
-    _client?.disposeChallenge();
+    final uid = _uid();
+    if (uid != null) {
+      _port?.disposeChallenge(uid);
+    }
+    _username.dispose();
+    _docNumber.dispose();
+    _dob.dispose();
+    _doe.dispose();
     super.dispose();
   }
 
@@ -193,7 +138,7 @@ class _AuthnScreenState extends State<AuthnScreen>
     if (state == AppLifecycleState.resumed) {
       _log.debug('App resumed, updating NFC status');
       await _updateNfcStatus();
-      if(!_authnData.isCompleted && !_isNfcAvailable) {
+      if(!_isNfcAvailable) {
         _log.debug('NFC is disabled showing alert');
         unawaited(_showNfcAlert());
       }
@@ -216,15 +161,15 @@ class _AuthnScreenState extends State<AuthnScreen>
         final timeout = Preferences.getConnectionTimeout();
         final url = Preferences.getServerUrl();
         _log.verbose('Updating client timeout=$timeout url=$url');
-        _client!.timeout = timeout;
-        _client!.url     = url;
+        _port!.timeout = timeout;
+        _port!.url     = url;
     } as Future<void> Function()?);
 
     return Scaffold(
             backgroundColor: Theme.of(context).backgroundColor,
             appBar: AppBar(
                 elevation: 1.0,
-                title: Text(_action == AuthnAction.register ? 'Sign Up' : 'Login'),
+                title: Text(_action == PortAction.register ? 'Sign Up' : 'Login'),
                 backgroundColor: Theme.of(context).cardColor,
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back_ios),
@@ -263,7 +208,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                                 text: 'SCAN PASSPORT',
                                 disabled: _disabledInput(),
                                 visible: _mrzData.currentState?.validate() ?? false,
-                                onPressed: _scanPassport,
+                                onPressed: _scan,
                               ),
                               const SizedBox(height: 16),
                             ]))))));
@@ -277,6 +222,26 @@ class _AuthnScreenState extends State<AuthnScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              TextFormField(
+                enabled: !_disabledInput(),
+                controller: _username,
+                keyboardAppearance: Brightness.dark,
+                decoration: const InputDecoration(labelText: 'Username'),
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-z]+')),
+                  LengthLimitingTextInputFormatter(20)
+                ],
+                textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.none,
+                autofocus: true,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Please enter username';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
               makeButton(
                 context: context,
                 text: 'FILL FROM STORAGE',
@@ -386,10 +351,13 @@ class _AuthnScreenState extends State<AuthnScreen>
     return _isScanningMrtd || !_isNfcAvailable;
   }
 
-  Future<AuthnData> _getAuthnData(final ProtoChallenge challenge) {
-    _challenge = challenge;
-    return _authnData.future;
+  UserId? _uid() {
+    if (_username.text.isEmpty) {
+      return null;
+    }
+    return UserId.fromString(_username.text);
   }
+
   DateTime? _getDOBDate() {
     if (_dob.text.isEmpty) {
       return null;
@@ -426,7 +394,7 @@ class _AuthnScreenState extends State<AuthnScreen>
       settingsAction = () => OpenSettings.openWIFISetting();
       title = 'No Internet connection';
       msg   = 'Internet connection is required in order to '
-              "${_action == AuthnAction.register ? "sign up" : "login"}.";
+              "${_action == PortAction.register ? "sign up" : "login"}.";
     }
     else {
       settingsAction = () => _settingsButton!.onPressed!();
@@ -439,76 +407,29 @@ class _AuthnScreenState extends State<AuthnScreen>
       Text(title),
       Text(msg),
       [
-        FlatButton(
+        TextButton(
+          style: flatButtonStyle,
           child: Text('MAIN MENU',
             style: TextStyle(
                 color: Theme.of(context).errorColor,
                 fontWeight: FontWeight.bold)),
           onPressed: () => Navigator.pop(context, false)
         ),
-        FlatButton(
-            child: const Text(
+        TextButton(
+          style: flatButtonStyle,
+          child: const Text(
             'SETTINGS',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           onPressed: settingsAction as void Function()?,
         ),
-        FlatButton(
+        TextButton(
+          style: flatButtonStyle,
           child: const Text(
             'RETRY',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           onPressed: () => Navigator.pop(context, true)
-        )
-      ]
-    ) as Future<bool>;
-  }
-
-  // Returns true if client should retry connection action
-  // otherwise false.
-  Future<bool> _handleDG1Request(final EfDG1 dg1) async {
-    _log.debug('Handling request for file EfDG1');
-    return showEfDG1Dialog<bool>(
-      context,
-      dg1,
-      message: 'Server requested additional data',
-      actions: [
-        makeButton(
-          context: context,
-          text: 'SEND',
-          margin: null,
-          onPressed: () {
-            Navigator.pop(context, true);
-        }),
-        OutlineButton(
-          onPressed: () => Navigator.pop(context, false),
-          borderSide: BorderSide(
-            width: 1,
-            color: Theme.of(context).primaryColor,
-          ),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30.0)),
-          highlightedBorderColor: Theme.of(context).primaryColor,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 20.0,
-              horizontal: 20.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    'LOG OUT',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
         )
       ]
     ) as Future<bool>;
@@ -538,15 +459,17 @@ class _AuthnScreenState extends State<AuthnScreen>
         Text('NFC disabled'),
         Text('NFC adapter is required to be enabled.'),
         [
-          FlatButton(
-              child: Text('MAIN MENU',
-                  style: TextStyle(
-                      color: Theme.of(context).errorColor,
-                      fontWeight: FontWeight.bold)),
+          TextButton(
+            style: flatButtonStyle,
+            child: Text('MAIN MENU',
+                style: TextStyle(
+                    color: Theme.of(context).errorColor,
+                    fontWeight: FontWeight.bold)),
             onPressed: () => _goToMain()
           ),
-          FlatButton(
-              child: const Text(
+          TextButton(
+            style: flatButtonStyle,
+            child: const Text(
               'SETTINGS',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -564,8 +487,7 @@ class _AuthnScreenState extends State<AuthnScreen>
     }
   }
 
-  Future<void> _scanPassport() async {
-    assert(_challenge != null);
+  Future<PassportData> _scanPassport({ProtoChallenge? challenge}) async {
     try {
       setState(() {
         _isScanningMrtd = true;
@@ -574,16 +496,120 @@ class _AuthnScreenState extends State<AuthnScreen>
       final dbaKeys = DBAKeys(_docNumber.text, _getDOBDate()!, _getDOEDate()!);
       final data = await PassportScanner(
         context: context,
-        challenge: _challenge,
+        challenge: challenge,
         action: _action
       ).scan(dbaKeys);
       await Preferences.setDBAKeys(dbaKeys);  // Save MRZ data
-      _authnData.complete(data);
-    } catch(e) {} // ignore: empty_catches
+      return data;
+    } //catch(e) {} // ignore: empty_catches
     finally {
       setState(() {
         _isScanningMrtd = false;
       });
+    }
+  }
+
+  Future<void> _scan() async {
+    try {
+      // Execute authn action on Port client
+      Map<String, dynamic> srvResult;
+      switch(_action) {
+        case PortAction.register:
+          srvResult = await _port!.register(_uid()!, (challenge) async {
+            unawaited(_hideBusyIndicator());
+            return _scanPassport(challenge: challenge).then((data) {
+              _showBusyIndicator(msg: 'Signing up ...');
+              // TODO: check that all required data is set
+              return RegistrationAuthnData(sod: data.sod!, dg15: data.dg15!, dg14: data.dg14, csig: data.csig!);
+            });
+          });
+          break;
+        case PortAction.login:
+        srvResult = await _port!.getAssertion(_uid()!, (challenge) async {
+            unawaited(_hideBusyIndicator());
+            return _scanPassport(challenge: challenge).then((data) {
+              _showBusyIndicator(msg: 'Logging in ...');
+              return data.csig!;
+            });
+        });
+        break;
+      }
+
+      String? srvMsg;
+      if (srvResult.isNotEmpty) {
+        srvMsg = jsonEncode(srvResult);
+      }
+
+      await Navigator.pushReplacement(
+        context, CupertinoPageRoute(
+          builder: (context) => SuccessScreen(_action, _uid()!, srvMsg),
+      ));
+    }
+    on PassportScannerError {/* Should be handled by scanner*/} // ignore: empty_catches
+    catch(e) {
+      String? alertTitle;
+      String? alertMsg;
+      if (e is SocketException) {} // should be already handled through _handleConnectionError callback
+      else if(e is PortError) {
+        _log.error('An unhandled Port exception, closing this screen.\n error=$e');
+        alertTitle = 'Port Error';
+        switch(e.code){
+          case 401: alertMsg = 'Authorization failed!'; break;
+          case 404: {
+            alertMsg = e.message;
+            if (alertMsg == 'Account not found') {
+              alertMsg = 'Account not registered!';
+            }
+          } break;
+          case 406: {
+            alertMsg = 'Passport verification failed!';
+            final msg = e.message.toLowerCase();
+            if(msg.contains('invalid dg1 file')) {
+              alertMsg = 'Server refused to accept sent personal data!';
+            }
+            else if(msg.contains('invalid dg15 file')) {
+              alertMsg = "Server refused to accept passport's public key!";
+            }
+          } break;
+          case 409: alertMsg = 'Account already exists!'; break;
+          case 412: alertMsg = 'Passport trust chain verification failed!'; break;
+          case 498: {
+            final msg = e.message.toLowerCase();
+            if(msg.contains('account has expired')) {
+              alertMsg = 'Account has expired, please register again!';
+              break;
+            }
+          } continue dflt;
+          dflt:
+          default:
+          alertMsg = 'Server returned error:\n\n${e.message}';
+        }
+      }
+      else {
+        _log.error('An unhandled exception was encountered, closing this screen.\n error=$e');
+        alertTitle = 'Error';
+        alertMsg = (e is Exception)
+          ? e.toString().split('Exception: ').first
+          : 'An unknown error has occurred.';
+      }
+
+      // Show alert dialog
+      if(alertMsg != null && alertTitle != null) {
+        await showAlert(context, Text(alertTitle), Text(alertMsg), [
+          TextButton(
+            style: flatButtonStyle,
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'MAIN MENU',
+              style: TextStyle(
+                  color: Theme.of(context).errorColor,
+                  fontWeight: FontWeight.bold),
+            ))
+        ]);
+      }
+
+      // Return to main menu
+      _goToMain();
     }
   }
 

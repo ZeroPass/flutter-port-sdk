@@ -9,9 +9,9 @@ import 'package:egport/uie/uiutils.dart';
 import 'authn_screen.dart';
 
 class SuccessScreen extends StatelessWidget {
-  final AuthnAction action;
+  final PortAction action;
   final UserId? uid;
-  final String serverMsg;
+  final String? serverMsg;
 
   final _successCheck =
       AssetFlare(bundle: rootBundle, name: 'assets/anim/success_check.flr');
@@ -20,7 +20,7 @@ class SuccessScreen extends StatelessWidget {
 
   void _goToMain(BuildContext context) {
     Navigator.popUntil(context, (route) {
-      if(route.settings.name == '/') {
+      if (route.settings.name == '/') {
         return true;
       }
       return false;
@@ -41,10 +41,13 @@ class SuccessScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Text((action == AuthnAction.register ? 'Sign up' : 'Login') + ' succeeded',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 24)),
+                        Text(
+                            (action == PortAction.register
+                                    ? 'Sign up'
+                                    : 'Login') +
+                                ' succeeded',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 24)),
                         Expanded(
                             flex: 30,
                             child: FlareCacheBuilder(
@@ -61,29 +64,30 @@ class SuccessScreen extends StatelessWidget {
                               },
                             )),
                         //Spacer(flex: 2),
-                        Row(children: <Widget>[
-                          Expanded(
-                              child: Text('Server says:',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20)))
-                        ]),
-                        Text(
-                          serverMsg,
-                          style: TextStyle(fontSize: 18)),
+                        if (serverMsg != null && serverMsg!.isNotEmpty)
+                          Row(children: <Widget>[
+                            Expanded(
+                                child: Text('Server returned:',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)))
+                          ]),
+                        if (serverMsg != null && serverMsg!.isNotEmpty)
+                          Text(serverMsg ?? '', style: TextStyle(fontSize: 18)),
+
                         Spacer(flex: 5),
                         makeButton(
                             context: context,
                             text: 'MAIN MENU',
-                            onPressed: () => _goToMain(context)
-                        ),
+                            onPressed: () => _goToMain(context)),
                         const SizedBox(height: 20),
-                                            Row(children: <Widget>[
+                        Row(children: <Widget>[
                           Text('UID: '),
-                          Expanded(
-                              child: FittedBox(
-                                  fit: BoxFit.fitWidth,
-                                  child: Text(uid.toString())))
+                          Text(uid.toString()),
+                          // Expanded(
+                          //     child: FittedBox(
+                          //         fit: BoxFit.fitWidth,
+                          //         child: Text(uid.toString())))
                         ]),
                       ]),
                 )))));
