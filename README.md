@@ -19,8 +19,8 @@ dependencies:
 ```dart
 import 'package:port/port.dart';
 
-AuthnData getAuthnData(final ProtoChallenge challenge) async {
-  return // data from passport
+PassportData getPassportData(final ProtoChallenge challenge) async {
+  return PassportData(...)// data from passport
 }
 
 main() {
@@ -30,16 +30,24 @@ main() {
     client.onDG1FileRequested = handleDG1Request;
 
     await client.register((challenge) async {
-      return getAuthnData(challenge);
+      final data = getPassportData(challenge);
+      return RegistrationAuthnData(sod: data.sod!, dg15: data.dg15!, dg14: data.dg14, csig: data.csig!);
     });
 
     await client.login((challenge) async {
-      return getAuthnData(challenge);
+      final data = getPassportData(challenge);
+      return data.csig!;
     });
 
-    final srvGreeting = await client.requestGreeting();
   } catch(e) {
     // handle error
+    if(e is PortError) {
+      if (e == PortError.accountAlreadyRegistered) error = 'Account already exists!';
+      ...
+    }
+    else {
+      ...
+    }
   }
 }
 ```
