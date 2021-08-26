@@ -1,6 +1,6 @@
 name: "port"
 description: "Client SDK to interact with Port server."
-version: 1.2.0
+version: 1.2.1
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
