@@ -553,37 +553,30 @@ class _AuthnScreenState extends State<AuthnScreen>
       else if(e is PortError) {
         _log.error('An unhandled Port exception, closing this screen.\n error=$e');
         alertTitle = 'Port Error';
-        switch(e.code){
-          case 401: alertMsg = 'Authorization failed!'; break;
-          case 404: {
-            alertMsg = e.message;
-            if (alertMsg == 'Account not found') {
-              alertMsg = 'Account not registered!';
-            }
-          } break;
-          case 406: {
-            alertMsg = 'Passport verification failed!';
-            final msg = e.message.toLowerCase();
-            if(msg.contains('invalid dg1 file')) {
-              alertMsg = 'Server refused to accept sent personal data!';
-            }
-            else if(msg.contains('invalid dg15 file')) {
-              alertMsg = "Server refused to accept passport's public key!";
-            }
-          } break;
-          case 409: alertMsg = 'Account already exists!'; break;
-          case 412: alertMsg = 'Passport trust chain verification failed!'; break;
-          case 498: {
-            final msg = e.message.toLowerCase();
-            if(msg.contains('account has expired')) {
-              alertMsg = 'Account has expired, please register again!';
-              break;
-            }
-          } continue dflt;
-          dflt:
-          default:
-          alertMsg = 'Server returned error:\n\n${e.message}';
-        }
+
+        // ignore_for_file: curly_braces_in_flow_control_structures
+        if (e == PortError.accountAlreadyRegistered)              alertMsg = 'Account already exists!';
+        else if (e == PortError.accountAttestationExpired)        alertMsg = 'Account attestation has expired!';
+        else if (e == PortError.accountNotAttested)               alertMsg = 'Account not attested!';
+        else if (e == PortError.accountNotFound)                  alertMsg = 'Account not registered!';
+        else if (e == PortError.challengeExpired)                 alertMsg = 'Protocol challenge has expired!';
+        else if (e == PortError.challengeNotFound)                alertMsg = 'Protocol challenge was not found!';
+        else if (e == PortError.challengeVerificationFailed)      alertMsg = 'Protocol challenge verification failed!';
+        else if (e == PortError.countryCodeMismatch)              alertMsg = 'Provided passport can\'t be used to attest ${_uid()}!';
+        else if (e == PortError.cscaNotFound)                     alertMsg = 'Server is missing CSCA certificate which issued provided passport!';
+        else if (e == PortError.dscNotFound)                      alertMsg = 'Server is missing DSC certificate which issued provided passport!';
+        else if (e == PortError.efDg14MissingAAInfo)              alertMsg = 'Provided passport is missing data crucial for verifying passport signature!';
+        else if (e == PortError.efSodMatch)                       alertMsg = 'Provided passport was already used to attest another account!';
+        else if (e == PortError.efSodNotGenuine)                  alertMsg = 'Provided passport is not genuine!';
+        else if (e == PortError.invalidDataGroupFile(14))         alertMsg = 'Provided passport contains corrupted file(s)!'; // broken EF.DG14 file
+        else if (e == PortError.invalidDataGroupFile(15))         alertMsg = 'Provided passport contains corrupted file(s)!'; // broken EF.DG15 file
+        else if (e == PortError.invalidDsc)                       alertMsg = 'DSC certificate which issued provided passport is not genuine!';
+        else if (e == PortError.invalidEfSod)                     alertMsg = 'Non-conformant passport!';
+        else if (e == PortError.trustchainCheckFailedExpiredCert) alertMsg = 'Expired certificate in the trustchain!';
+        else if (e == PortError.trustchainCheckFailedRevokedCert) alertMsg = 'Revoked certificate in the trustchain!';
+        else if (e == PortError.trustchainCheckFailedNoCsca)      alertMsg = 'Server couldn\'t verify trustchain of provided passport due to missing issuer CSCA certificate!';
+        else if (e.code == PortError.ecServerError)               alertMsg = 'Internal server error!';
+        else                                                      alertMsg = 'Server returned error:\n\n${e.message}';
       }
       else {
         _log.error('An unhandled exception was encountered, closing this screen.\n error=$e');
