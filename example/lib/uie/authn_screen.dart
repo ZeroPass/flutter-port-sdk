@@ -578,6 +578,11 @@ class _AuthnScreenState extends State<AuthnScreen>
         else if (e.code == PortError.ecServerError)               alertMsg = 'Internal server error!';
         else                                                      alertMsg = 'Server returned error:\n\n${e.message}';
       }
+      else if (e is HttpException) {
+        _log.error('HttpConnection error has occurred\n error=$e');
+        alertTitle = 'Http Error';
+        alertMsg = e.message;
+      }
       else {
         _log.error('Unhandled exception was encountered, closing this screen.\n error=$e');
         alertTitle = 'Error';
