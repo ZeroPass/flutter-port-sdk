@@ -579,11 +579,11 @@ class _AuthnScreenState extends State<AuthnScreen>
         else                                                      alertMsg = 'Server returned error:\n\n${e.message}';
       }
       else {
-        _log.error('An unhandled exception was encountered, closing this screen.\n error=$e');
+        _log.error('Unhandled exception was encountered, closing this screen.\n error=$e');
         alertTitle = 'Error';
         alertMsg = (e is Exception)
-          ? e.toString().split('Exception: ').first
-          : 'An unknown error has occurred.';
+          ? e.toString().split('Exception: ').last
+          : 'Unknown error has occurred.';
       }
 
       // Show alert dialog
