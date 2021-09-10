@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:port/src/proto/challenge_signature.dart';
 import 'package:port/src/proto/uid.dart';
 
@@ -33,8 +34,11 @@ class PortClient {
   /// Constructs new [PortClient] using server [url] address and
   /// optionally [httpClient].
   PortClient(Uri url, {HttpClient? httpClient}) :
-    _api = PortApi(url, httpClient: httpClient ?? HttpClient());
-
+    _api = PortApi(url, httpClient: httpClient ?? HttpClient()) {
+      PackageInfo.fromPlatform().then((pi) => {
+        _api.userAgent = '${pi.packageName}/${pi.version}'
+      });
+    }
 
   /// Callback invoked when sending request fails due to connection errors.
   /// If [callback] returns true the the client will retry to connect.

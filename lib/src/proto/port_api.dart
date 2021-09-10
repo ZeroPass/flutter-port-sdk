@@ -23,6 +23,9 @@ class PortApi {
   Uri get url => _rpc.url;
   set url(Uri url) => _rpc.url = url;
 
+  String? get userAgent => _rpc.userAgent;
+  set userAgent(String? agent) => _rpc.userAgent = agent;
+
   PortApi(Uri url, {HttpClient? httpClient}) :
      _rpc = JRPClient(url, httpClient: httpClient ?? HttpClient());
 
