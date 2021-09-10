@@ -52,7 +52,20 @@ class JRPClient {
     final reqId = notify ? null : Uuid().v4(options: {'rng': UuidUtil.cryptoRNG});
     var req = JRpcRequest(method, params, reqId, version: rpcVersion);
 
-    final resp  = await _sendRequest(req);
+    late HttpClientResponse resp;
+    try {
+      resp  = await _sendRequest(req);
+    } on HttpException catch (e) {
+      // It could be that server closed the persistent TLS connection
+      // on it's side and [httpClient] reused this closed connection.
+      // This can happen when `persistentConnection = true` and server
+      // has short keep-alive time period.
+      // Let's try sending the request once more.
+      _log.debug('$e');
+      _log.debug('Retrying to send the failed request once more ...');
+      resp  = await _sendRequest(req);
+    }
+
     final jresp = await _handleResonse(resp, reqNotify: notify);
     if (notify) {
       return Future.value(null);
@@ -78,17 +91,23 @@ class JRPClient {
     // Make a http POST request
     final request = await httpClient.postUrl(url);
     request.persistentConnection = persistentConnection;
-    request.headers.add(HttpHeaders.acceptHeader, 'application/json');
-    request.headers.add(HttpHeaders.contentTypeHeader, 'application/json');
+    request.headers.persistentConnection = persistentConnection;
+
+    request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     if (origin != null && origin!.isNotEmpty) {
       request.headers.add('Origin', origin!);
     }
     if (userAgent != null && userAgent!.isNotEmpty) {
       request.headers.add(HttpHeaders.userAgentHeader, userAgent!);
     }
+    if (payload.isNotEmpty) {
+      request.headers.contentType   = ContentType.json;
+      request.headers.contentLength = payload.length;
+    }
 
-    // Add json payload and send request
+    // Send request
     request.write(payload);
+    await request.flush();
     return request.close();
   }
 
@@ -97,14 +116,14 @@ class JRPClient {
     final content = await resp.transform(utf8.decoder).join();
     _log.deVerbose('Response content="$content"');
 
-    if(reqNotify && (resp.statusCode == 204 || content.isEmpty)) {
+    if (reqNotify && (resp.statusCode == 204 || content.isEmpty)) {
       return null;
     }
-    else if(resp.statusCode == 200) {
+    else if (resp.statusCode == 200) {
       try {
         final jrpcResp = JRpcResponse.parse(json.decode(content));
         _log.debug('RPC response for reqId=${jrpcResp.id}');
-        if(jrpcResp.isError()) {
+        if (jrpcResp.isError()) {
           _log.error('${jrpcResp.error}');
         }
         else {
@@ -121,7 +140,7 @@ class JRPClient {
 
   dynamic _handleJRpcResponse(String? reqId, JRpcResponse response) {
     assert(reqId == response.id);
-    if(response.isError()) {
+    if (response.isError()) {
       return response.error;
     }
     return response.result;
