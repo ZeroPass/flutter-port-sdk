@@ -27,7 +27,9 @@ class PortApi {
   set userAgent(String? agent) => _rpc.userAgent = agent;
 
   PortApi(Uri url, {HttpClient? httpClient}) :
-     _rpc = JRPClient(url, httpClient: httpClient ?? HttpClient());
+     _rpc = JRPClient(url,
+         httpClient: httpClient ?? HttpClient(),
+         persistentConnection: false); //it should be false because server itself terminate connection
 
 /******************************************** API CALLS *****************************************************/
 /************************************************************************************************************/
