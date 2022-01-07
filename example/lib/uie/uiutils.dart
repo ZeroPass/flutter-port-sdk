@@ -1,8 +1,9 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pedantic/pedantic.dart';
 
 import 'load_indicator.dart';
 import 'settings_screen.dart';
@@ -77,7 +78,7 @@ Future<T?> showAlert<T>(BuildContext context, Widget title, Widget content,
 Future<void> showBusyDialog(BuildContext context, GlobalKey key,
     {String msg = 'Please Wait ....',
     Duration syncWait = const Duration(milliseconds: 200)}) async {
-  unawaited(showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
