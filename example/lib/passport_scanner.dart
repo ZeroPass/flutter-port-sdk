@@ -208,7 +208,7 @@ class PassportScanner {
     ]);
   }
 
-  Future<void> _connect({String? alertMessage}) {
+  Future<void> _connect({String alertMessage = "Hold your device near the biometric Passport"}) {
     if (!Platform.isIOS) { // on iOS it's NFC framework handles displaying a NFC scan dialog
       _scanDialog.show(message: alertMessage);
     }
