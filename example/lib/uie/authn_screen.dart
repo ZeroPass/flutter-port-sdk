@@ -514,23 +514,18 @@ class _AuthnScreenState extends State<AuthnScreen>
       Map<String, dynamic> srvResult;
       switch(_action) {
         case PortAction.register:
-          srvResult = await _port!.register(_uid()!, (challenge) async {
-            unawaited(_hideBusyIndicator());
-            return _scanPassport(challenge: challenge).then((data) {
-              _showBusyIndicator(msg: 'Signing up ...');
-              // TODO: check that all required data is set
-              return RegistrationAuthnData(sod: data.sod!, dg15: data.dg15!, dg14: data.dg14, csig: data.csig!);
-            });
-          });
+          unawaited(_hideBusyIndicator());
+          var passdata = await _scanPassport();
+          srvResult = await _port!.register(_uid()!, passdata.sod!, dg15: passdata.dg15, dg14: passdata.dg14);
           break;
         case PortAction.login:
-        srvResult = await _port!.getAssertion(_uid()!, (challenge) async {
-            unawaited(_hideBusyIndicator());
-            return _scanPassport(challenge: challenge).then((data) {
-              _showBusyIndicator(msg: 'Logging in ...');
-              return data.csig!;
-            });
-        });
+          srvResult = await _port!.getAssertion(_uid()!, (challenge) async {
+              unawaited(_hideBusyIndicator());
+              return _scanPassport(challenge: challenge).then((data) {
+                _showBusyIndicator(msg: 'Logging in ...');
+                return data.csig!;
+              });
+          });
         break;
       }
 
@@ -548,6 +543,7 @@ class _AuthnScreenState extends State<AuthnScreen>
     catch(e) {
       String? alertTitle;
       String? alertMsg;
+      bool justClose = false;
       if (e is SocketException) {} // should be already handled through _handleConnectionError callback
       else if(e is PortError) {
         _log.error('An unhandled Port exception, closing this screen.\n error=$e');
@@ -557,7 +553,7 @@ class _AuthnScreenState extends State<AuthnScreen>
         if (e == PortError.accountAlreadyRegistered)              alertMsg = 'Account already exists!';
         else if (e == PortError.accountAttestationExpired)        alertMsg = 'Account attestation has expired!';
         else if (e == PortError.accountNotAttested)               alertMsg = 'Account not attested!';
-        else if (e == PortError.accountNotFound)                  alertMsg = 'Account not registered!';
+        else if (e == PortError.accountNotFound)                  {alertMsg = 'Account not registered!'; if (_action == PortAction.login) justClose = true;}
         else if (e == PortError.challengeExpired)                 alertMsg = 'Protocol challenge has expired!';
         else if (e == PortError.challengeNotFound)                alertMsg = 'Protocol challenge was not found!';
         else if (e == PortError.challengeVerificationFailed)      alertMsg = 'Protocol challenge verification failed!';
@@ -597,7 +593,7 @@ class _AuthnScreenState extends State<AuthnScreen>
             style: flatButtonStyle,
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'MAIN MENU',
+              justClose ? 'OK' : 'MAIN MENU',
               style: TextStyle(
                   color: Theme.of(context).errorColor,
                   fontWeight: FontWeight.bold),
@@ -606,7 +602,7 @@ class _AuthnScreenState extends State<AuthnScreen>
       }
 
       // Return to main menu
-      _goToMain();
+      if (!justClose) _goToMain();
     }
   }
 

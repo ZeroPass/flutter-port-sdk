@@ -76,14 +76,12 @@ class PortApi {
   /// API: port.register
   /// Returns [Dictionary] from server.
   /// Can throw [JRPClientError], [PortError] and [SocketException] on connection errors.
-  Future<Map<String, dynamic>> register(final UserId uid, final EfSOD sod, final EfDG15 dg15, final CID cid, final ChallengeSignature csig, {EfDG14? dg14, bool? override}) async {
+  Future<Map<String, dynamic>> register(final UserId uid, final EfSOD sod, {final EfDG15? dg15, final EfDG14? dg14, final bool? override}) async {
     _log.debug('${_apiPrefix}register() =>');
     final params = {
       ...uid.toJson(),
       'sod' : sod.toBytes().base64(),
-      'dg15' : dg15.toBytes().base64(),
-      ...cid.toJson(),
-      ...csig.toJson(),
+      if(dg15 != null) 'dg15': dg15.toBytes().base64(),
       if(dg14 != null) 'dg14': dg14.toBytes().base64(),
       if(override != null) 'override': override
     };

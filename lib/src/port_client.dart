@@ -8,7 +8,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:port/src/proto/challenge_signature.dart';
 import 'package:port/src/proto/uid.dart';
 
-import 'authn_data.dart';
 import 'proto/port_api.dart';
 import 'proto/port_error.dart';
 import 'proto/proto_challenge.dart';
@@ -97,24 +96,21 @@ class PortClient {
     return await _retriableCall(() => _api.ping(number));
   }
 
-  /// Registers new Port biometric passport attestation for [uid] using [RegistrationAuthnData] returned via [callback] as attestation data.
-  /// The [RegistrationAuthnData] should have assigned fields [dg14] if AA public key in [dg15] is of type [EC].
+  /// Registers new Port biometric passport Passive Attestation for [uid] using [sod] and optionally EF files [dg15] and [dg14].
+  /// The [dg15] file is required when passport supports Active Authentication and file [dg14] if AA public key in [dg15] is of type [EC].
+  /// If [override] is True an existing registration under [uid] will be overridden.
+  /// Note, if previous registration is overridden the old passport can't be used anymore.
   ///
   /// Returns server specific user registration result in JSON format.
   ///
   /// Throws [SocketException] on connection error if not handled by [onConnectionError] callback.
   /// Throws [PortError] when required data returned by [callback] is missing or
   /// when provided data is invalid e.g. verification of challenge signature fails.
-  Future<Map<String, dynamic>> register(UserId uid, Future<RegistrationAuthnData> Function(ProtoChallenge challenge) callback) async {
+  Future<Map<String, dynamic>> register(final UserId uid, final EfSOD sod, {final EfDG15? dg15, final EfDG14? dg14, final bool? override}) async {
     _log.verbose('::register: uid=$uid');
-    final challenge = await _retriableCall(()=>_fetchChallenge(uid));
 
-    _log.verbose('Invoking callback with received challenge, cid=${challenge.id}');
-    final data = await callback(challenge);
-    if(  data.sod.toBytes().isEmpty
-      || data.csig.isEmpty
-      || (data.dg15.aaPublicKey.type == AAPublicKeyType.EC && data.dg14 == null)){
-        _log.error('Callback returned authn data which is missing required attestation files and data for registration.');
+    if(  sod.toBytes().isEmpty
+      || (dg15?.aaPublicKey.type == AAPublicKeyType.EC && dg14 == null)){
         throw PortError(-32602, 'Missing required eMRTD attestation data for registration');
     }
 
@@ -124,14 +120,14 @@ class PortClient {
         _log.error('  e=$error');
         throw _RethrowPortError(error);
       }
-      return _api.register(uid, data.sod, data.dg15, challenge.id, data.csig, dg14: data.dg14);
+      return _api.register(uid, sod, dg15: dg15, dg14: dg14, override: override);
     });
 
     _challenges.remove(uid);
     return result;
   }
 
-  Future<ProtoChallenge> _fetchChallenge(UserId uid) async {
+  Future<ProtoChallenge> _fetchChallenge(final UserId uid) async {
     final t = DateTime.now();
     // if tidy-up time, remove any expired challenge
     if (_ttime.isBefore(t.subtract(_tint))) {

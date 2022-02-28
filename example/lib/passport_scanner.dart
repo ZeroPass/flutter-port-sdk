@@ -65,10 +65,6 @@ class PassportScanner {
   /// Note: That any error, except for the user cancellation error is
   ///       displayed to the user via sheet dialog.
   Future<PassportData> scan(final DBAKeys dbaKeys) async {
-    if (challenge == null) {
-      throw PassportScannerError('challenge is null');
-    }
-
     String? errorMsg;
     try {
       _log.debug('Waiting for passport ...');
@@ -79,12 +75,12 @@ class PassportScanner {
       _setAlertMessage('Initiating session ...');
       await _call(() => passport.startSession(dbaKeys));
 
-      _setAlertMessage(formatProgressMsg('Reading data ...', 0));
+      _setAlertMessage(formatProgressMsg('Scanning passport ...', 0));
       final efcom = await _call<EfCOM>(() => passport.readEfCOM());
       _log.debug('EF.COM version: ${efcom!.version}');
 
       _log.debug('Available data groups: ${formatDgTagSet(efcom.dgTags)}');
-      if ((action == PortAction.register || action == PortAction.login)
+      if (action == PortAction.login
         && !efcom.dgTags.containsAll([EfDG15.TAG])) {
         _log.info('Unsupported passport - "missing file Ef.DG15');
         errorMsg = 'Unsupported passport';
@@ -99,36 +95,43 @@ class PassportScanner {
         //   pdata.dg1 = await _call(() => passport.readEfDG1());
         // }
         _setAlertMessage(formatProgressMsg('Reading data ...', 20));
-        pdata.dg15 = await _call(() => passport.readEfDG15());
-        _log.debug('Passport AA public key type: ${pdata.dg15!.aaPublicKey.type}');
-        if (pdata.dg15!.aaPublicKey.type == AAPublicKeyType.EC) {
-          if (!efcom.dgTags.contains(EfDG14.TAG)) {
-            errorMsg = 'Unsupported passport';
-            _log.warning(
-                'Strange ... passport should contain file EF.DG14 but is somehow missing?!');
-            await _showUnsupportedMrtdAlert(); // TODO: show more descriptive alert dialog
-            throw PassportScannerError('Unsupported passport');
+        if (efcom.dgTags.containsAll([EfDG15.TAG])) {
+          pdata.dg15 = await _call(() => passport.readEfDG15());
+          _log.debug('Passport AA public key type: ${pdata.dg15!.aaPublicKey.type}');
+          if (pdata.dg15!.aaPublicKey.type == AAPublicKeyType.EC) {
+            if (!efcom.dgTags.contains(EfDG14.TAG)) {
+              errorMsg = 'Unsupported passport';
+              _log.warning(
+                  'Strange ... passport should contain file EF.DG14 but is somehow missing?!');
+              await _showUnsupportedMrtdAlert(); // TODO: show more descriptive alert dialog
+              throw PassportScannerError('Unsupported passport');
+            }
+            pdata.dg14 = await _call(() => passport.readEfDG14());
           }
-          pdata.dg14 = await _call(() => passport.readEfDG14());
         }
 
         _setAlertMessage(formatProgressMsg('Reading data ...', 60));
         pdata.sod = await _call(() => passport.readEfSOD());
       }
-
-      _log.debug('Signing challenge ...');
-      _setAlertMessage(formatProgressMsg('Signing challenge ...', 80));
-      pdata.csig = ChallengeSignature();
-      for (final c in challenge!.getChunks(Passport.aaChallengeLen)) {
-        _log.verbose('Signing challenge chunk: ${c.hex()}');
-        final sig = await _call(() => passport.activeAuthenticate(c));
-        _log.verbose("  Chunk's signature: ${sig!.hex()}");
-        pdata.csig!.addSignature(sig);
+      else { // login
+        _log.debug('Signing challenge ...');
+        if (challenge == null) {
+          throw PassportScannerError('challenge is null');
+        }
+        int progress = 1;
+        pdata.csig = ChallengeSignature();
+        for (final c in challenge!.getChunks(Passport.aaChallengeLen)) {
+          _setAlertMessage(formatProgressMsg('Signing challenge ...', progress++ * 20));
+          _log.verbose('Signing challenge chunk: ${c.hex()}');
+          final sig = await _call(() => passport.activeAuthenticate(c));
+          _log.verbose("  Chunk's signature: ${sig!.hex()}");
+          pdata.csig!.addSignature(sig);
+        }
       }
 
       _log.debug('Scanning passport completed');
       return pdata;
-    } on PassportScannerError {
+    } on PassportScannerError{
       rethrow;
     } catch (e) {
       final se = e.toString().toLowerCase();
