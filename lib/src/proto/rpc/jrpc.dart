@@ -79,14 +79,14 @@ class JRPClient {
     _log.debug('  rpc_version=${jrpcRequest.version}');
     _log.debug('  id=${jrpcRequest.id}');
     _log.debug("  method='${jrpcRequest.method}'");
-    _log.deVerbose(' call params=${jrpcRequest.params}');
+    _log.debug(' call params=${jrpcRequest.params}');
     String payload;
     try {
       payload = json.encode(jrpcRequest.toJson());
     } catch (e) {
       throw JRPClientError("Can't serialized package ($jrpcRequest) to JSON");
     }
-    _log.deVerbose(' serialized payload=$payload');
+    _log.debug(' serialized payload=$payload');
 
     // Make a http POST request
     final request = await httpClient.postUrl(url);
@@ -114,7 +114,7 @@ class JRPClient {
   Future<dynamic> _handleResonse(final HttpClientResponse resp, {required final reqNotify}) async {
     _log.debug('Received response with status code: ${resp.statusCode}');
     final content = await resp.transform(utf8.decoder).join();
-    _log.deVerbose('Response content="$content"');
+    _log.verbose('Response content="$content"');
 
     if (reqNotify && (resp.statusCode == 204 || content.isEmpty)) {
       return null;
@@ -127,7 +127,7 @@ class JRPClient {
           _log.error('${jrpcResp.error}');
         }
         else {
-          _log.deVerbose('RPC response data=${jrpcResp.result}');
+          _log.debug('RPC response data=${jrpcResp.result}');
         }
         return jrpcResp;
       }
