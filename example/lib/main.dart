@@ -43,14 +43,14 @@ class EgPortApp extends StatelessWidget {
           disabledColor: Colors.black38,
           applyElevationOverlayColor: true,
           primaryColor: const Color(0xffeaeaea),
-          accentColor: const Color(0xffbb86fc),
+          //accentColor: const Color(0xffbb86fc),
           errorColor: const Color(0xffcf6679),
           cardColor: const Color(0xff121212),
           snackBarTheme: const SnackBarThemeData(
               backgroundColor: Color(0xff292929),
               contentTextStyle: TextStyle(color: Color(0xffeaeaea))),
           backgroundColor: const Color(0xff121212),
-          accentColorBrightness: Brightness.dark,
+          //accentColorBrightness: Brightness.dark,
           brightness: Brightness.dark,
           primaryColorBrightness: Brightness.dark,
           inputDecorationTheme: InputDecorationTheme(
@@ -74,7 +74,7 @@ class _EgPortWidgetState extends State<EgPortWidget>
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]); // hide status bar
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []); // hide status bar
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,

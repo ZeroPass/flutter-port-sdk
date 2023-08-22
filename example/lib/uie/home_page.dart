@@ -61,15 +61,7 @@ Widget HomePage(
           child: Row(
             children: <Widget>[
               Expanded(
-                child: OutlineButton(
-                  borderSide: BorderSide(
-                    width: 1,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0)),
-                  color: Colors.redAccent,
-                  highlightedBorderColor: Theme.of(context).primaryColor,
+                child: OutlinedButton(
                   onPressed: onSignupPressed as void Function()?,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -103,10 +95,7 @@ Widget HomePage(
           child: Row(
             children: <Widget>[
               Expanded(
-                child: FlatButton(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0)),
-                  color: Theme.of(context).primaryColor,
+                child: TextButton(
                   onPressed: onLoginPressed as void Function()?,
                   child: Container(
                     padding: const EdgeInsets.symmetric(

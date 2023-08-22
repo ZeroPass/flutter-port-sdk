@@ -38,13 +38,7 @@ Container makeButton(
           alignment: Alignment.center,
           child: Row(children: <Widget>[
             Expanded(
-                child: FlatButton(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0)),
-                    color: color ?? Theme.of(context).accentColor,
-                    textColor: Theme.of(context).cardColor,
-                    disabledTextColor: Theme.of(context).disabledColor,
-                    padding: padding,
+                child: TextButton(
                     child: Text(
                       text,
                       style: TextStyle(fontWeight: FontWeight.bold),

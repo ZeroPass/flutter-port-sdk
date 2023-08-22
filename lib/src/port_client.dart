@@ -110,7 +110,7 @@ class PortClient {
     _log.verbose('::register: uid=$uid');
 
     if(  sod.toBytes().isEmpty
-      || (dg15?.aaPublicKey.type == AAPublicKeyType.EC && dg14 == null)){
+      || (dg15?.aaPublicKey.type == AAPublicKeyType.ECC && dg14 == null)){
         throw PortError(-32602, 'Missing required eMRTD attestation data for registration');
     }
 

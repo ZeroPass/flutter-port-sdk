@@ -92,7 +92,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showSnackBar(BuildContext scaffoldContext, String msg) {
     final snackBar = SnackBar(content: Text(msg, textAlign: TextAlign.center));
-    Scaffold.of(scaffoldContext).showSnackBar(snackBar);
+    //Scaffold.of(scaffoldContext).showSnackBar(snackBar);
+    ScaffoldMessenger.of(scaffoldContext).showSnackBar(snackBar);
   }
 
   Padding _buildForm(BuildContext context) {
@@ -156,13 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         alignment: Alignment.center,
         child: Row(children: <Widget>[
           Expanded(
-            child: FlatButton(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0)),
-              color: Theme.of(context).accentColor,
-              textColor: Theme.of(context).cardColor,
-              disabledTextColor: Theme.of(context).disabledColor,
-              padding: const EdgeInsets.all(20.0),
+            child: TextButton(
               child: const Text(
                 'TEST CONNECTION',
                 style: TextStyle(fontWeight: FontWeight.bold),

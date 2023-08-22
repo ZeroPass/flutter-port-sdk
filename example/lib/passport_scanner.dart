@@ -98,7 +98,7 @@ class PassportScanner {
         if (efcom.dgTags.containsAll([EfDG15.TAG])) {
           pdata.dg15 = await _call(() => passport.readEfDG15());
           _log.debug('Passport AA public key type: ${pdata.dg15!.aaPublicKey.type}');
-          if (pdata.dg15!.aaPublicKey.type == AAPublicKeyType.EC) {
+          if (pdata.dg15!.aaPublicKey.type == AAPublicKeyType.ECC) {
             if (!efcom.dgTags.contains(EfDG14.TAG)) {
               errorMsg = 'Unsupported passport';
               _log.warning(
