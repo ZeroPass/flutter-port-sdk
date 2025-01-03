@@ -64,7 +64,7 @@ class PassportScanner {
   /// On error [PassportScannerError] is thrown.
   /// Note: That any error, except for the user cancellation error is
   ///       displayed to the user via sheet dialog.
-  Future<PassportData> scan(final DBAKeys dbaKeys) async {
+  Future<PassportData> scan(final DBAKey dbaKeys) async {
     String? errorMsg;
     try {
       _log.debug('Waiting for passport ...');

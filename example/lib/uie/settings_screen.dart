@@ -52,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return true;
         },
         child: Scaffold(
-            backgroundColor: Theme.of(context).backgroundColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
                 elevation: 1.0,
                 title: const Text('Settings'),

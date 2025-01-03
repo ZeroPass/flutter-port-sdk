@@ -1,7 +1,8 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
 import 'package:async/async.dart';
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/provider/asset_flare.dart';
+//import 'package:flare_flutter/flare_actor.dart';
+import 'package:rive/rive.dart';
+//import 'package:flare_flutter/provider/asset_flare.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -108,11 +109,11 @@ class NfcScanDialog {
                               Container(
                                   width: 100,
                                   height: 100,
-                                  child: FlareActor.asset(
+                                  child: RiveAnimation.asset(
                                     _IconAnimations.file,
                                     alignment: Alignment.center,
                                     fit: BoxFit.cover,
-                                    animation: _iconAnimation,
+                                    animations: [_iconAnimation],
                                   )),
                               const SizedBox(height: 15),
                               ConstrainedBox(
@@ -186,8 +187,7 @@ class NfcScanDialog {
 }
 
 class _IconAnimations {
-  static final file =
-      AssetFlare(bundle: rootBundle, name: 'assets/anim/nfc.flr');
+  static final file = 'assets/anim/nfc.flr';
   static const animWaiting  = 'nfc';
   static const animScanning = 'nfc';
   static const animSuccess  = 'checkmark';

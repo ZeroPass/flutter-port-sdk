@@ -20,7 +20,7 @@ class PortClient {
   var _tint = Duration(minutes: 5); // tidy-up interval
   var _ttime = DateTime.now(); // last tidy-up time
 
-  Future<bool> Function(SocketException e)? _onConnectionError;
+  Future<bool?> Function(SocketException e)? _onConnectionError;
 
   /// Returns connection timeout.
   Duration? get timeout => _api.timeout;
@@ -41,7 +41,7 @@ class PortClient {
 
   /// Callback invoked when sending request fails due to connection errors.
   /// If [callback] returns true the the client will retry to connect.
-  set onConnectionError(Future<bool> Function(SocketException e) callback) =>
+  set onConnectionError(Future<bool?> Function(SocketException e) callback) =>
     _onConnectionError = callback;
 
   /// Notifies server to dispose challenge used for register/getAssertion.

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:connectivity/connectivity.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dmrtd/dmrtd.dart';
 import 'package:dmrtd/extensions.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
-import 'package:open_settings/open_settings.dart';
+import 'package:open_settings_plus/open_settings_plus.dart';
 import 'package:port/port.dart';
 
 import '../passport_scanner.dart';
@@ -104,7 +104,7 @@ class _AuthnScreenState extends State<AuthnScreen>
                   child: Text(
                     'MAIN MENU',
                     style: TextStyle(
-                        color: Theme.of(context).errorColor,
+                        color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.bold),
                   ))
               ]);
@@ -156,16 +156,16 @@ class _AuthnScreenState extends State<AuthnScreen>
   Widget build(BuildContext context) {
     _settingsButton = settingsButton(
       context,
-      onWillPop: (){
+      onWillPop: () async {
         final timeout = Preferences.getConnectionTimeout();
         final url = Preferences.getServerUrl();
         _log.verbose('Updating client timeout=$timeout url=$url');
         _port!.timeout = timeout;
         _port!.url     = url;
-    } as Future<void> Function()?);
+    });
 
     return Scaffold(
-            backgroundColor: Theme.of(context).backgroundColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
                 elevation: 1.0,
                 title: Text(_action == PortAction.register ? 'Sign Up' : 'Login'),
@@ -182,7 +182,7 @@ class _AuthnScreenState extends State<AuthnScreen>
             body: Container(
                 //height: MediaQuery.of(context).size.height,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).backgroundColor,
+                  //color: Theme.of(context).colorScheme.
                 ),
                 child: Padding(
                     padding: EdgeInsets.all(16.0),
@@ -382,7 +382,7 @@ class _AuthnScreenState extends State<AuthnScreen>
 
   // Returns true if client should retry connection action
   // otherwise false.
-  Future<bool> _handleConnectionError(final SocketException e) async {
+  Future<bool?> _handleConnectionError(final SocketException e) async {
     String title;
     String msg;
     Function settingsAction;
@@ -390,7 +390,7 @@ class _AuthnScreenState extends State<AuthnScreen>
     final connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult == ConnectivityResult.none ||
      !await testConnection()) {
-      settingsAction = () => OpenSettings.openWIFISetting();
+      settingsAction = () => OpenSettingsPlusAndroid().wifi();
       title = 'No Internet connection';
       msg   = 'Internet connection is required in order to '
               "${_action == PortAction.register ? "sign up" : "login"}.";
@@ -410,7 +410,7 @@ class _AuthnScreenState extends State<AuthnScreen>
           style: flatButtonStyle,
           child: Text('MAIN MENU',
             style: TextStyle(
-                color: Theme.of(context).errorColor,
+                color: Theme.of(context).colorScheme.error,
                 fontWeight: FontWeight.bold)),
           onPressed: () => Navigator.pop(context, false)
         ),
@@ -431,7 +431,7 @@ class _AuthnScreenState extends State<AuthnScreen>
           onPressed: () => Navigator.pop(context, true)
         )
       ]
-    ) as Future<bool>;
+    );
   }
 
   Future<void> _showBusyIndicator({String msg = 'Please Wait ....'}) async {
@@ -462,7 +462,7 @@ class _AuthnScreenState extends State<AuthnScreen>
             style: flatButtonStyle,
             child: Text('MAIN MENU',
                 style: TextStyle(
-                    color: Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error,
                     fontWeight: FontWeight.bold)),
             onPressed: () => _goToMain()
           ),
@@ -472,7 +472,7 @@ class _AuthnScreenState extends State<AuthnScreen>
               'SETTINGS',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            onPressed: () => OpenSettings.openMainSetting(),
+            onPressed: () => OpenSettingsPlusAndroid(),
           )
         ],
         key: _keyNfcAlert
@@ -492,7 +492,7 @@ class _AuthnScreenState extends State<AuthnScreen>
         _isScanningMrtd = true;
       });
 
-      final dbaKeys = DBAKeys(_docNumber.text, _getDOBDate()!, _getDOEDate()!);
+      final dbaKeys = DBAKey(_docNumber.text, _getDOBDate()!, _getDOEDate()!);
       final data = await PassportScanner(
         context: context,
         challenge: challenge,
@@ -595,7 +595,7 @@ class _AuthnScreenState extends State<AuthnScreen>
             child: Text(
               justClose ? 'OK' : 'MAIN MENU',
               style: TextStyle(
-                  color: Theme.of(context).errorColor,
+                  color: Theme.of(context).colorScheme.error,
                   fontWeight: FontWeight.bold),
             ))
         ]);

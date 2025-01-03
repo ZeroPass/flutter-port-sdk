@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:dmrtd/extensions.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
-import 'package:uuid/uuid_util.dart';
+//import 'package:uuid/uuid_util.dart';
 
 import 'jrpc_objects.dart';
 
@@ -49,7 +49,7 @@ class JRPClient {
   /// Returns the response.
   ///
   Future<dynamic> call({ required final String method, final dynamic params = const [], notify = false }) async {
-    final reqId = notify ? null : Uuid().v4(options: {'rng': UuidUtil.cryptoRNG});
+    final reqId = notify ? null : Uuid().v4(/*options: {'rng': UuidUtil.cryptoRNG}*/);
     var req = JRpcRequest(method, params, reqId, version: rpcVersion);
 
     late HttpClientResponse resp;

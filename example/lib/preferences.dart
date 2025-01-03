@@ -19,20 +19,20 @@ class Preferences {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
-  static DBAKeys? getDBAKeys() {
+  static DBAKey? getDBAKeys() {
     final data = _prefs!.getString(_dbakeys);
     if(data == null) {
       return null;
     }
     final jkeys = jsonDecode(data);
-    return DBAKeys(
+    return DBAKey(
       jkeys['mrtd_num'],
       (jkeys['dob'] as String).parseDateYYMMDD(),
       (jkeys['doe'] as String).parseDateYYMMDD()
     );
   }
 
-  static Future<bool> setDBAKeys(final DBAKeys keys) {
+  static Future<bool> setDBAKeys(final DBAKey keys) {
     final data = jsonEncode({
       'mrtd_num' : keys.mrtdNumber,
       'dob'      : keys.dateOfBirth.formatYYMMDD(),

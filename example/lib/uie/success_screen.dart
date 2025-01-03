@@ -1,7 +1,5 @@
 //  Created by Crt Vavros, copyright © 2021 ZeroPass. All rights reserved.
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/flare_cache_builder.dart';
-import 'package:flare_flutter/provider/asset_flare.dart';
+import 'package:rive/rive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:port/port.dart';
@@ -13,8 +11,7 @@ class SuccessScreen extends StatelessWidget {
   final UserId? uid;
   final String? serverMsg;
 
-  final _successCheck =
-      AssetFlare(bundle: rootBundle, name: 'assets/anim/success_check.flr');
+  final _successCheck = 'assets/anim/success_check.flr';
 
   SuccessScreen(this.action, this.uid, this.serverMsg);
 
@@ -30,7 +27,7 @@ class SuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Container(
             child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -50,19 +47,14 @@ class SuccessScreen extends StatelessWidget {
                                 fontWeight: FontWeight.bold, fontSize: 24)),
                         Expanded(
                             flex: 30,
-                            child: FlareCacheBuilder(
-                              [_successCheck],
-                              builder: (BuildContext context, bool isWarm) {
-                                return !isWarm
-                                    ? Container()
-                                    : FlareActor.asset(
+                            child: RiveAnimation.asset(
                                         _successCheck,
                                         alignment: Alignment.center,
                                         fit: BoxFit.cover,
-                                        animation: 'Untitled',
-                                      );
-                              },
-                            )),
+                                        animations: ['Untitled'],
+                                      )
+                              //}),
+                            ),
                         //Spacer(flex: 2),
                         if (serverMsg != null && serverMsg!.isNotEmpty)
                           Row(children: <Widget>[

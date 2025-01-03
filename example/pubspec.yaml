@@ -14,12 +14,12 @@ description: 'Port example client app.'
 version: 1.2.2+1
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: ^3.6.0
 
 publish_to: none # git packages
 
 dependencies:
-  connectivity: ^3.0.3
+  connectivity_plus: ^6.1.1
   dart_countries_states: ^0.1.1
   flutter:
     sdk: flutter
@@ -27,10 +27,11 @@ dependencies:
     sdk: flutter
   #flutter_widgets: ^0.1.12
   flutter_launcher_icons: ^0.9.0
-  intl: ^0.18.0
-  open_settings:
-    git:
-      url: https://github.com/marcojoao/open_settings
+  #intl: ^0.18.0
+  open_settings_plus: ^0.4.0
+  #open_settings:
+  #  git:
+  #    url: https://github.com/marcojoao/open_settings
   port:
     path: ../
 
@@ -38,7 +39,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.3
   shared_preferences: ^2.0.5
-  flare_flutter: ^3.0.0
+  #flare_flutter: ^3.0.2
+  rive: ^0.13.20
+
+dependency_overrides:
+  win32: ^5.5.4
 
 dev_dependencies:
   flutter_test:

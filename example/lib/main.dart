@@ -44,15 +44,15 @@ class EgPortApp extends StatelessWidget {
           applyElevationOverlayColor: true,
           primaryColor: const Color(0xffeaeaea),
           //accentColor: const Color(0xffbb86fc),
-          errorColor: const Color(0xffcf6679),
+          //errorColor: const Color(0xffcf6679),
           cardColor: const Color(0xff121212),
           snackBarTheme: const SnackBarThemeData(
               backgroundColor: Color(0xff292929),
               contentTextStyle: TextStyle(color: Color(0xffeaeaea))),
-          backgroundColor: const Color(0xff121212),
+          //backgroundColor: const Color(0xff121212),
           //accentColorBrightness: Brightness.dark,
           brightness: Brightness.dark,
-          primaryColorBrightness: Brightness.dark,
+          //primaryColorBrightness: Brightness.dark,
           inputDecorationTheme: InputDecorationTheme(
               border: const OutlineInputBorder(),
               focusedBorder: OutlineInputBorder(
@@ -121,7 +121,7 @@ class _EgPortWidgetState extends State<EgPortWidget>
                 },
                 child: Text('EXIT',
                     style: TextStyle(
-                        color: Theme.of(context).errorColor,
+                        color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.bold)))
             ]);
       }
