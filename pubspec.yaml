@@ -9,10 +9,10 @@ publish_to: none # git dep
 
 dependencies:
   dmrtd:
-    path: ../dmrtd/dmrtd
+  #  path: ../dmrtd/dmrtd
   # temp commented out
-  #  git:
-  #    url: https://github.com/ZeroPass/dmrtd.git
+    git:
+      url: https://github.com/ZeroPass/dmrtd.git
   #    ref: develop
   flutter:
     sdk: flutter
